@@ -170,9 +170,39 @@ function deleteLiveEvent(req, res) {
   }
 }
 
+/**
+ * Reset match completely back to 'programado' state (as if never started)
+ */
+function resetMatch(req, res) {
+  try {
+    const partidoId = req.params.id;
+    const match = db.prepare('SELECT * FROM partidos WHERE id = ?').get(partidoId);
+    if (!match) {
+      return res.status(404).json({ error: 'Partido no encontrado' });
+    }
+
+    // Reset status, goals, and timer
+    db.prepare(`
+      UPDATE partidos 
+      SET estado = 'programado', goles_local = 0, goles_visitante = 0, segundos_transcurridos = 0, tiempo_inicio_parte = NULL
+      WHERE id = ?
+    `).run(partidoId);
+
+    // Delete all live events for this match
+    db.prepare('DELETE FROM eventos_partido WHERE partido_id = ?').run(partidoId);
+
+    const updated = db.prepare('SELECT * FROM partidos WHERE id = ?').get(partidoId);
+    res.json({ success: true, message: 'Partido reiniciado correctamente', match: updated });
+  } catch (err) {
+    console.error('Error resetting match:', err);
+    res.status(500).json({ error: 'Error al reiniciar el partido' });
+  }
+}
+
 module.exports = {
   getActiveLiveMatch,
   updateLiveStatus,
   addLiveEvent,
-  deleteLiveEvent
+  deleteLiveEvent,
+  resetMatch
 };

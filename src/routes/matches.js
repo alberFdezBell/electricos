@@ -18,6 +18,7 @@ router.post('/:id/alineacion', lineupController.saveAlineacion);
 router.post('/:id/estado', liveController.updateLiveStatus);
 router.post('/:id/eventos', liveController.addLiveEvent);
 router.delete('/:id/eventos/:eventId', liveController.deleteLiveEvent);
+router.post('/:id/reiniciar', liveController.resetMatch);
 
 module.exports = router;
 

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "DEV.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "DEV"
             }
           }
         ]
@@ -99,7 +99,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "README.md",
+                "file": "DEV.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -118,7 +118,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "README.md",
+                "file": "DEV.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
@@ -161,7 +161,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
+                "file": "DEV.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -190,10 +190,10 @@
   },
   "active": "96563a9129ce9310",
   "lastOpenFiles": [
+    "README.md",
     "src/routes/upload.js",
     "docker-compose.yml",
     "DEV.md",
-    "README.md",
     "public/images/electricos.png",
     "public/images/placeholder-fondo.png",
     "public/images/no borrar/placeholder-fondo.png",

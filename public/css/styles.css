@@ -219,6 +219,17 @@ button, input, select, textarea {
   color: var(--white);
 }
 
+.btn-outline-danger {
+  background-color: transparent;
+  border: 2px solid #EF4444;
+  color: #EF4444;
+}
+
+.btn-outline-danger:hover {
+  background-color: #EF4444;
+  color: #ffffff;
+}
+
 .btn-block {
   width: 100%;
 }

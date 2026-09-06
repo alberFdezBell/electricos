@@ -134,7 +134,8 @@ function renderMatchDetailPage() {
 
         <div class="header-action-buttons">
           <button class="btn btn-outline btn-sm" onclick="openEditMatchModal()">✏️ Editar Partido</button>
-          <a href="${liveUrl}" data-link class="btn btn-primary btn-sm">⚡ ${isFinished ? 'Ver Marcador en Directo' : 'Empezar Partido'}</a>
+          ${m.estado !== 'programado' ? `<button class="btn btn-outline-danger btn-sm" onclick="resetMatchFromDetail(${m.id})">🔄 Reiniciar Partido</button>` : ''}
+          <a href="${liveUrl}" data-link class="btn btn-primary btn-sm">⚡ ${isFinished ? 'Ver Marcador en Directo' : (m.estado === 'programado' ? 'Empezar Partido' : 'Ir al Partido en Directo')}</a>
         </div>
       </div>
     </div>
@@ -586,5 +587,21 @@ async function saveEditMatch(event) {
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
+  }
+}
+
+async function resetMatchFromDetail(matchId) {
+  if (confirm('¿Estás seguro de reiniciar el partido? El marcador, eventos y cronómetro volverán a cero como si nunca hubieses pulsado "Empezar Partido", pero se conservarán la convocatoria y alineación.')) {
+    try {
+      const res = await fetch(`/api/partidos/${matchId}/reiniciar`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al reiniciar el partido');
+
+      await loadPartidoDetalleView();
+    } catch (err) {
+      alert(err.message);
+    }
   }
 }

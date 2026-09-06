@@ -127,6 +127,12 @@ function renderLivePage() {
       ${isFinished ? `
         <div class="alert alert-success text-center">El partido ha finalizado. <a href="${m.url}" data-link>Ver informe completo</a></div>
       ` : ''}
+
+      ${!isProgrammed ? `
+        <div style="margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+          <button class="btn btn-outline-danger btn-block" onclick="resetPartidoDirecto()">🔄 Reiniciar Partido (Volver al estado inicial)</button>
+        </div>
+      ` : ''}
     </div>
 
     <!-- Action Buttons (Eléctricos vs Rival) -->
@@ -383,6 +389,26 @@ async function finishPartido() {
 
       if (liveState.timerInterval) clearInterval(liveState.timerInterval);
       navigateTo(liveState.match.url);
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
+
+async function resetPartidoDirecto() {
+  if (confirm('¿Estás seguro de reiniciar el partido? El marcador, eventos y cronómetro volverán a cero como si nunca hubieses pulsado "Empezar Partido", pero se conservarán la convocatoria y alineación.')) {
+    try {
+      const res = await fetch(`/api/partidos/${liveState.match.id}/reiniciar`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al reiniciar el partido');
+
+      if (liveState.timerInterval) clearInterval(liveState.timerInterval);
+      liveState.elapsedSeconds = 0;
+      liveState.match = data.match;
+      renderLivePage();
+      setupTimer();
     } catch (err) {
       alert(err.message);
     }
