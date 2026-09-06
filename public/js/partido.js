@@ -314,19 +314,26 @@ function openFifaSelectorModal(slotId) {
 
   title.textContent = `Elegir ${slotInfo ? slotInfo.label : 'Jugador'}`;
 
-  // Filter candidate players: MUST be in convocatoria
+  // Get all players included in convocatoria
   let candidates = matchDetailState.allPlayers.filter(p => matchDetailState.convocatoriaIds.includes(p.id));
 
-  // Filter candidates by slot roles if matching roles exist
-  if (slotInfo && slotInfo.roles && slotInfo.roles.length > 0) {
-    const filteredByRole = candidates.filter(p => slotInfo.roles.includes(p.posicion));
-    if (filteredByRole.length > 0) {
-      candidates = filteredByRole;
+  const roles = (slotInfo && slotInfo.roles) ? slotInfo.roles : [];
+
+  // Sort candidates:
+  // 1. Natural position players FIRST
+  // 2. Other positions SECOND
+  // 3. Dorsal ASC
+  candidates.sort((a, b) => {
+    const aIsNatural = roles.includes(a.posicion) ? 1 : 0;
+    const bIsNatural = roles.includes(b.posicion) ? 1 : 0;
+    if (aIsNatural !== bIsNatural) {
+      return bIsNatural - aIsNatural;
     }
-  }
+    return a.dorsal - b.dorsal;
+  });
 
   if (candidates.length === 0) {
-    grid.innerHTML = '<div class="empty-state">No hay jugadores convocados para esta posición. Revisa la convocatoria.</div>';
+    grid.innerHTML = '<div class="empty-state">No hay jugadores convocados. Revisa la convocatoria.</div>';
   } else {
     grid.innerHTML = `
       <div class="fifa-card empty-card" onclick="selectPlayerForSlot(null)">
@@ -335,16 +342,24 @@ function openFifaSelectorModal(slotId) {
           <span>Vaciar Hueco</span>
         </div>
       </div>
-      ${candidates.map(p => `
-        <div class="fifa-card" onclick="selectPlayerForSlot(${p.id})">
-          <div class="fifa-card-inner">
-            <span class="fifa-rating">#${p.dorsal}</span>
-            <span class="fifa-pos">${p.posicion.slice(0, 3).toUpperCase()}</span>
-            <img src="${p.foto || '/images/electricos.png'}" class="fifa-photo" onerror="this.src='/images/electricos.png'">
-            <div class="fifa-name">${p.nombre}</div>
+      ${candidates.map(p => {
+        const isNatural = roles.includes(p.posicion);
+        const currentSlotKey = Object.keys(matchDetailState.pitchAssignments).find(k => matchDetailState.pitchAssignments[k] === p.id);
+        const isAssignedElsewhere = currentSlotKey && currentSlotKey !== slotId;
+
+        return `
+          <div class="fifa-card ${isNatural ? 'fifa-card-natural' : 'fifa-card-secondary'} ${isAssignedElsewhere ? 'fifa-card-assigned' : ''}" onclick="selectPlayerForSlot(${p.id})">
+            <div class="fifa-card-inner">
+              <span class="fifa-rating">#${p.dorsal}</span>
+              <span class="fifa-pos">${p.posicion.slice(0, 3).toUpperCase()}</span>
+              ${isNatural ? '<span class="natural-badge">⭐ Ideal</span>' : ''}
+              ${isAssignedElsewhere ? '<span class="assigned-badge">📍 En campo</span>' : ''}
+              <img src="${p.foto || '/images/electricos.png'}" class="fifa-photo" onerror="this.src='/images/electricos.png'">
+              <div class="fifa-name">${p.nombre}</div>
+            </div>
           </div>
-        </div>
-      `).join('')}
+        `;
+      }).join('')}
     `;
   }
 
@@ -361,6 +376,12 @@ function selectPlayerForSlot(playerId) {
     if (playerId === null) {
       delete matchDetailState.pitchAssignments[slotId];
     } else {
+      // PREVENT DUPLICATES: Remove player from any other slot first
+      for (const [sId, pId] of Object.entries(matchDetailState.pitchAssignments)) {
+        if (pId === playerId) {
+          delete matchDetailState.pitchAssignments[sId];
+        }
+      }
       matchDetailState.pitchAssignments[slotId] = playerId;
     }
     renderPitchSlots();

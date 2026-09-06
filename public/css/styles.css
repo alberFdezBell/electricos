@@ -1249,6 +1249,41 @@ button, input, select, textarea {
   margin-top: 16px;
 }
 
+.fifa-card-natural {
+  background: linear-gradient(135deg, #FEF08A 0%, #EAB308 100%);
+  border: 2px solid #CA8A04;
+}
+
+.fifa-card-secondary {
+  background: linear-gradient(135deg, #F1F5F9 0%, #CBD5E1 100%);
+  border: 2px solid #94A3B8;
+  opacity: 0.9;
+}
+
+.natural-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--dark-navy);
+  color: var(--primary-yellow);
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.assigned-badge {
+  position: absolute;
+  bottom: 24px;
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--white);
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
 /* Timeline Rows */
 .timeline-list {
   display: flex;
