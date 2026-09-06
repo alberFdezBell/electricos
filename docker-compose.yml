@@ -18,6 +18,8 @@ services:
     volumes:
       - electricos_data:/app/data
       - electricos_uploads:/app/public/uploads
+    networks:
+      - electricos_net
 
   tunnel:
     image: cloudflare/cloudflared:latest
@@ -26,6 +28,12 @@ services:
     command: tunnel --no-autoupdate run
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - electricos_net
+
+networks:
+  electricos_net:
+    driver: bridge
 
 volumes:
   electricos_data:
