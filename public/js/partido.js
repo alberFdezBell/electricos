@@ -134,6 +134,7 @@ function renderMatchDetailPage() {
 
         <div class="header-action-buttons">
           <button class="btn btn-outline btn-sm" onclick="openEditMatchModal()">✏️ Editar Partido</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteMatchFromDetail(${m.id})">🗑️ Eliminar Partido</button>
           ${m.estado !== 'programado' ? `<button class="btn btn-outline-danger btn-sm" onclick="resetMatchFromDetail(${m.id})">🔄 Reiniciar Partido</button>` : ''}
           <a href="${liveUrl}" data-link class="btn btn-primary btn-sm">⚡ ${isFinished ? 'Ver Marcador en Directo' : (m.estado === 'programado' ? 'Empezar Partido' : 'Ir al Partido en Directo')}</a>
         </div>
@@ -600,6 +601,22 @@ async function resetMatchFromDetail(matchId) {
       if (!res.ok) throw new Error(data.error || 'Error al reiniciar el partido');
 
       await loadPartidoDetalleView();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+}
+
+async function deleteMatchFromDetail(matchId) {
+  if (confirm('¿Estás seguro de eliminar este partido permanentemente? Se eliminarán la convocatoria, alineación y eventos registrados.')) {
+    try {
+      const res = await fetch(`/api/partidos/${matchId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar el partido');
+
+      navigateTo('/calendario');
     } catch (err) {
       alert(err.message);
     }

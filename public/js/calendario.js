@@ -116,6 +116,85 @@ async function loadCalendarioView() {
         </form>
       </div>
     </div>
+
+    <!-- Modal Editar Partido -->
+    <div id="editMatchCalendarModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>✏️ Editar Partido</h3>
+          <button class="modal-close" onclick="closeEditMatchCalendarModal()">&times;</button>
+        </div>
+        <form id="editMatchCalendarForm" onsubmit="saveEditMatchCalendario(event)">
+          <input type="hidden" id="editCalMatchId">
+
+          <div class="form-group">
+            <label for="editCalCompeticion">Competición *</label>
+            <select id="editCalCompeticion" required>
+              <option value="Liga">Liga</option>
+              <option value="Copa Primavera">Copa Primavera</option>
+              <option value="Copa Sevilla">Copa Sevilla</option>
+              <option value="Amistoso">Amistoso</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editCalJornada">Número de Jornada *</label>
+            <input type="number" id="editCalJornada" min="1" required>
+          </div>
+
+          <div class="team-input-section card">
+            <h4>Equipo Local</h4>
+            <div class="form-group">
+              <label for="editCalLocalNombre">Nombre Local *</label>
+              <input type="text" id="editCalLocalNombre" required>
+            </div>
+            <div class="form-group">
+              <label for="editCalLocalFotoFile">Subir nuevo escudo Local (opcional)</label>
+              <input type="file" id="editCalLocalFotoFile" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="editCalLocalFoto">O URL escudo Local</label>
+              <input type="text" id="editCalLocalFoto">
+            </div>
+          </div>
+
+          <div class="team-input-section card">
+            <h4>Equipo Visitante</h4>
+            <div class="form-group">
+              <label for="editCalVisitanteNombre">Nombre Visitante *</label>
+              <input type="text" id="editCalVisitanteNombre" required>
+            </div>
+            <div class="form-group">
+              <label for="editCalVisitanteFotoFile">Subir nuevo escudo Visitante (opcional)</label>
+              <input type="file" id="editCalVisitanteFotoFile" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="editCalVisitanteFoto">O URL escudo Visitante</label>
+              <input type="text" id="editCalVisitanteFoto">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="editCalFechaHora">Fecha y Hora *</label>
+              <input type="datetime-local" id="editCalFechaHora" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editCalLugar">Campo / Lugar *</label>
+            <input type="text" id="editCalLugar" required>
+          </div>
+
+          <div id="editCalMatchError" class="alert alert-error hidden"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" onclick="closeEditMatchCalendarModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
   `;
 
   await fetchCalendarMatches();
@@ -187,8 +266,14 @@ function renderSingleMonthHTML(dateObj, monthNames) {
       matchBadgeHTML = dayMatches.map(m => {
         const compSlug = m.competicion.toLowerCase().replace(/\s+/g, '-');
         return `
-          <div class="cal-match-pill pill-${compSlug}" onclick="event.stopPropagation(); navigateTo('${m.url}')" title="${m.equipo_local_nombre} vs ${m.equipo_visitante_nombre}">
-            ${m.equipo_local_nombre.slice(0, 5)} vs ${m.equipo_visitante_nombre.slice(0, 5)}
+          <div class="cal-match-pill-row" onclick="event.stopPropagation()">
+            <div class="cal-match-pill pill-${compSlug}" onclick="navigateTo('${m.url}')" title="${m.equipo_local_nombre} vs ${m.equipo_visitante_nombre}">
+              ${m.equipo_local_nombre.slice(0, 5)} vs ${m.equipo_visitante_nombre.slice(0, 5)}
+            </div>
+            <div class="cal-pill-actions">
+              <button class="cal-pill-btn cal-pill-edit" onclick="event.stopPropagation(); openEditMatchModalCalendario(${m.id})" title="Editar">✏️</button>
+              <button class="cal-pill-btn cal-pill-delete" onclick="event.stopPropagation(); deleteMatchCalendario(${m.id})" title="Eliminar">🗑️</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -339,5 +424,99 @@ async function saveMatch(event) {
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
+  }
+}
+
+/* ── Calendar inline edit / delete ─────────────────────────── */
+
+async function openEditMatchModalCalendario(matchId) {
+  try {
+    const res = await fetch(`/api/partidos/${matchId}`);
+    if (!res.ok) throw new Error('No se pudo cargar el partido');
+    const m = await res.json();
+
+    document.getElementById('editCalMatchId').value = m.id;
+    document.getElementById('editCalCompeticion').value = m.competicion;
+    document.getElementById('editCalJornada').value = m.jornada;
+    document.getElementById('editCalLocalNombre').value = m.equipo_local_nombre;
+    document.getElementById('editCalLocalFoto').value = m.equipo_local_foto || '';
+    document.getElementById('editCalVisitanteNombre').value = m.equipo_visitante_nombre;
+    document.getElementById('editCalVisitanteFoto').value = m.equipo_visitante_foto || '';
+    document.getElementById('editCalFechaHora').value = m.fecha_hora ? m.fecha_hora.slice(0, 16) : '';
+    document.getElementById('editCalLugar').value = m.lugar;
+    document.getElementById('editCalMatchError').classList.add('hidden');
+    document.getElementById('editCalLocalFotoFile').value = '';
+    document.getElementById('editCalVisitanteFotoFile').value = '';
+
+    document.getElementById('editMatchCalendarModal').classList.remove('hidden');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function closeEditMatchCalendarModal() {
+  document.getElementById('editMatchCalendarModal').classList.add('hidden');
+}
+
+async function saveEditMatchCalendario(event) {
+  event.preventDefault();
+  const matchId = document.getElementById('editCalMatchId').value;
+  const competicion = document.getElementById('editCalCompeticion').value;
+  const jornada = document.getElementById('editCalJornada').value;
+  const equipo_local_nombre = document.getElementById('editCalLocalNombre').value.trim();
+  let equipo_local_foto = document.getElementById('editCalLocalFoto').value.trim();
+  const equipo_visitante_nombre = document.getElementById('editCalVisitanteNombre').value.trim();
+  let equipo_visitante_foto = document.getElementById('editCalVisitanteFoto').value.trim();
+  const fecha_hora = document.getElementById('editCalFechaHora').value;
+  const lugar = document.getElementById('editCalLugar').value.trim();
+  const errDiv = document.getElementById('editCalMatchError');
+
+  errDiv.classList.add('hidden');
+
+  try {
+    const localFile = document.getElementById('editCalLocalFotoFile');
+    if (localFile && localFile.files[0]) {
+      const url = await uploadImageFile(localFile);
+      if (url) equipo_local_foto = url;
+    }
+
+    const visitanteFile = document.getElementById('editCalVisitanteFotoFile');
+    if (visitanteFile && visitanteFile.files[0]) {
+      const url = await uploadImageFile(visitanteFile);
+      if (url) equipo_visitante_foto = url;
+    }
+
+    const res = await fetch(`/api/partidos/${matchId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        competicion, jornada,
+        equipo_local_nombre, equipo_local_foto,
+        equipo_visitante_nombre, equipo_visitante_foto,
+        fecha_hora, lugar
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al actualizar el partido');
+
+    closeEditMatchCalendarModal();
+    await fetchCalendarMatches();
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.classList.remove('hidden');
+  }
+}
+
+async function deleteMatchCalendario(matchId) {
+  if (confirm('¿Eliminar este partido permanentemente? Se borrarán la convocatoria, alineación y eventos registrados.')) {
+    try {
+      const res = await fetch(`/api/partidos/${matchId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar el partido');
+      await fetchCalendarMatches();
+    } catch (err) {
+      alert(err.message);
+    }
   }
 }

@@ -286,6 +286,9 @@ function updateMatch(req, res) {
 function deleteMatch(req, res) {
   try {
     const id = req.params.id;
+    db.prepare('DELETE FROM convocatorias WHERE partido_id = ?').run(id);
+    db.prepare('DELETE FROM alineaciones WHERE partido_id = ?').run(id);
+    db.prepare('DELETE FROM eventos_partido WHERE partido_id = ?').run(id);
     db.prepare('DELETE FROM partidos WHERE id = ?').run(id);
     res.json({ success: true, message: 'Partido eliminado' });
   } catch (err) {
