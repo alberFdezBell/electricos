@@ -190,6 +190,7 @@
   },
   "active": "96563a9129ce9310",
   "lastOpenFiles": [
+    "public/js/html2canvas.min.js",
     "README.md",
     "src/routes/upload.js",
     "docker-compose.yml",

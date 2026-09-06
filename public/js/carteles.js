@@ -321,46 +321,48 @@ function renderCartelAnuncio(container, match) {
   `;
 }
 
-/**
- * Client HTML5 Canvas / Image Downloader
- */
-function downloadPosterAsPNG() {
+async function downloadPosterAsPNG() {
   const element = document.getElementById('posterCanvasContainer');
-  if (!element) return;
+  if (!element) {
+    alert('No se encontró el cartel.');
+    return;
+  }
 
-  // Use HTML5 Canvas drawing fallback / SVG data-url conversion for instant high-res PNG download
-  const svgData = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${element.offsetWidth}" height="${element.offsetHeight}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          ${element.outerHTML}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
+  const downloadBtn = document.querySelector('button[onclick="downloadPosterAsPNG()"]');
+  const originalText = downloadBtn ? downloadBtn.innerHTML : '📥 Descargar PNG';
+  if (downloadBtn) {
+    downloadBtn.innerHTML = '⏳ Generando PNG...';
+    downloadBtn.disabled = true;
+  }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = element.offsetWidth * 2;
-  canvas.height = element.offsetHeight * 2;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(2, 2);
+  try {
+    if (typeof html2canvas === 'function') {
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: null,
+        logging: false
+      });
 
-  const img = new Image();
-  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
+      const pngUrl = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `cartel-electricos-fc-${cartelesState.type || 'poster'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      return;
+    }
 
-  img.onload = function () {
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-
-    const pngUrl = canvas.toDataURL('image/png');
-    const downloadLink = document.createElement('a');
-    downloadLink.href = pngUrl;
-    downloadLink.download = `cartel-electricos-fc-${cartelesState.type}.png`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-  };
-
-  img.src = url;
+    throw new Error('No se pudo cargar html2canvas.');
+  } catch (err) {
+    console.error('Error al generar PNG:', err);
+    alert('Error al descargar la imagen: ' + err.message);
+  } finally {
+    if (downloadBtn) {
+      downloadBtn.innerHTML = originalText;
+      downloadBtn.disabled = false;
+    }
+  }
 }
