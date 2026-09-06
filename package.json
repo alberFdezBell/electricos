@@ -1,0 +1,25 @@
+{
+  "name": "electricos-fc-web",
+  "version": "1.0.0",
+  "description": "Aplicación web de gestión para Eléctricos FC (Fútbol 7)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "futbol7",
+    "electricos",
+    "express",
+    "sqlite"
+  ],
+  "author": "Eléctricos FC",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

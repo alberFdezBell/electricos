@@ -1,0 +1,35 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# SQLite Database local files
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+!data/.gitkeep
+
+# Uploaded images (dynamic user uploads)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker build exports
+*.tar
