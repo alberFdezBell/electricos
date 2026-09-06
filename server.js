@@ -14,10 +14,14 @@ const { requireAuth } = require('./src/middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust reverse proxy (Cloudflare Tunnel)
+app.set('trust proxy', 1);
+
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
 
 // Session management
 app.use(

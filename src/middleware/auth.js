@@ -3,8 +3,8 @@ function requireAuth(req, res, next) {
     return next();
   }
   
-  // If request is an API call, return 401 JSON
-  if (req.path.startsWith('/api/')) {
+  // Check req.originalUrl to correctly detect /api/ routes when middleware is mounted on /api
+  if (req.originalUrl && req.originalUrl.startsWith('/api/')) {
     return res.status(401).json({ error: 'No autorizado. Por favor inicie sesión.' });
   }
 
