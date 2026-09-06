@@ -68,8 +68,8 @@ app.get('*', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`⚡ Servidor de Eléctricos FC ejecutándose en http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`⚡ Servidor de Eléctricos FC ejecutándose en http://0.0.0.0:${PORT}`);
 });
 
 module.exports = app;
