@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const { formatFechaEspandol, getMatchUrl } = require('../utils/helpers');
+const { formatFechaEspandol, getMatchUrl, getMatchLiveUrl } = require('../utils/helpers');
 
 /**
  * Get all matches with optional state filter
@@ -23,7 +23,8 @@ function getAllMatches(req, res) {
     const formattedMatches = matches.map(m => ({
       ...m,
       fecha_formateada: formatFechaEspandol(m.fecha_hora),
-      url: getMatchUrl(m)
+      url: getMatchUrl(m),
+      url_live: getMatchLiveUrl(m)
     }));
 
     res.json(formattedMatches);
@@ -93,6 +94,7 @@ function getMatchById(req, res) {
 
     match.fecha_formateada = formatFechaEspandol(match.fecha_hora);
     match.url = getMatchUrl(match);
+    match.url_live = getMatchLiveUrl(match);
 
     // Fetch squad call-up (convocatoria)
     const squadQuery = `

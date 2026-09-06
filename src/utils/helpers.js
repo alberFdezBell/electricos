@@ -113,11 +113,23 @@ function getMatchUrl(partido) {
   return `/partidos/${compSlug}/jornada-${jornada}/${localSlug}-vs-${visitanteSlug}?id=${partido.id}`;
 }
 
+/**
+ * Build clean URL for live match tracking page
+ */
+function getMatchLiveUrl(partido) {
+  const compSlug = COMPETICIONES_NAMES[partido.competicion] || 'liga';
+  const jornada = partido.jornada || 1;
+  const localSlug = slugify(partido.equipo_local_nombre);
+  const visitanteSlug = slugify(partido.equipo_visitante_nombre);
+  return `/partidos/${compSlug}/jornada-${jornada}/${localSlug}-vs-${visitanteSlug}/partido-en-directo?id=${partido.id}`;
+}
+
 module.exports = {
   FORMACIONES_FUTBOL_7,
   COMPETICIONES_SLUGS,
   COMPETICIONES_NAMES,
   formatFechaEspandol,
   slugify,
-  getMatchUrl
+  getMatchUrl,
+  getMatchLiveUrl
 };

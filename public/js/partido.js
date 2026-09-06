@@ -102,7 +102,7 @@ function renderMatchDetailPage() {
   const container = document.getElementById('app-view');
 
   const isFinished = m.estado === 'finalizado';
-  const liveUrl = `${m.url}/partido-en-directo`;
+  const liveUrl = m.url_live || `/partidos/${compSlug}/jornada-${m.jornada}/partido-en-directo?id=${m.id}`;
 
   container.innerHTML = `
     <!-- Header Banner -->
@@ -218,6 +218,73 @@ function renderMatchDetailPage() {
           <button class="modal-close" onclick="closeFifaModal()">&times;</button>
         </div>
         <div id="fifaCardsSlider" class="fifa-cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- Modal Editar Partido -->
+    <div id="editMatchModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Editar Datos del Partido</h3>
+          <button class="modal-close" onclick="closeEditMatchModal()">&times;</button>
+        </div>
+        <form id="editMatchForm" onsubmit="saveEditMatch(event)">
+          <div class="form-group">
+            <label for="editCompeticion">Competición *</label>
+            <select id="editCompeticion" required>
+              <option value="Liga">Liga</option>
+              <option value="Copa Primavera">Copa Primavera</option>
+              <option value="Copa Sevilla">Copa Sevilla</option>
+              <option value="Amistoso">Amistoso</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editJornada">Jornada *</label>
+            <input type="number" id="editJornada" min="1" required>
+          </div>
+
+          <div class="team-input-section card">
+            <h4>Equipo Local</h4>
+            <div class="form-group">
+              <label for="editLocalNombre">Nombre Local *</label>
+              <input type="text" id="editLocalNombre" required>
+            </div>
+            <div class="form-group">
+              <label for="editLocalFotoFile">Subir Foto Local (opcional)</label>
+              <input type="file" id="editLocalFotoFile" accept="image/*">
+            </div>
+          </div>
+
+          <div class="team-input-section card">
+            <h4>Equipo Visitante</h4>
+            <div class="form-group">
+              <label for="editVisitanteNombre">Nombre Visitante *</label>
+              <input type="text" id="editVisitanteNombre" required>
+            </div>
+            <div class="form-group">
+              <label for="editVisitanteFotoFile">Subir Foto Visitante (opcional)</label>
+              <input type="file" id="editVisitanteFotoFile" accept="image/*">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editFechaHora">Fecha y Hora *</label>
+            <input type="datetime-local" id="editFechaHora" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editLugar">Campo / Lugar *</label>
+            <input type="text" id="editLugar" required>
+          </div>
+
+          <div id="editMatchError" class="alert alert-error hidden"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" onclick="closeEditMatchModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -441,4 +508,83 @@ function renderEventRowHTML(e) {
       <span class="timeline-desc">${text}</span>
     </div>
   `;
+}
+
+function openEditMatchModal() {
+  const m = matchDetailState.match;
+  document.getElementById('editCompeticion').value = m.competicion;
+  document.getElementById('editJornada').value = m.jornada;
+  document.getElementById('editLocalNombre').value = m.equipo_local_nombre;
+  document.getElementById('editVisitanteNombre').value = m.equipo_visitante_nombre;
+  document.getElementById('editFechaHora').value = m.fecha_hora ? m.fecha_hora.slice(0, 16) : '';
+  document.getElementById('editLugar').value = m.lugar;
+
+  document.getElementById('editMatchError').classList.add('hidden');
+  document.getElementById('editMatchModal').classList.remove('hidden');
+}
+
+function closeEditMatchModal() {
+  document.getElementById('editMatchModal').classList.add('hidden');
+}
+
+async function saveEditMatch(event) {
+  event.preventDefault();
+  const m = matchDetailState.match;
+  const competicion = document.getElementById('editCompeticion').value;
+  const jornada = document.getElementById('editJornada').value;
+  const equipo_local_nombre = document.getElementById('editLocalNombre').value.trim();
+  const equipo_visitante_nombre = document.getElementById('editVisitanteNombre').value.trim();
+  const fecha_hora = document.getElementById('editFechaHora').value;
+  const lugar = document.getElementById('editLugar').value.trim();
+  const errDiv = document.getElementById('editMatchError');
+
+  errDiv.classList.add('hidden');
+
+  let equipo_local_foto = m.equipo_local_foto;
+  let equipo_visitante_foto = m.equipo_visitante_foto;
+
+  try {
+    const localFile = document.getElementById('editLocalFotoFile');
+    const visitanteFile = document.getElementById('editVisitanteFotoFile');
+
+    if (localFile && localFile.files[0]) {
+      const formData = new FormData();
+      formData.append('file', localFile.files[0]);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) equipo_local_foto = data.url;
+    }
+
+    if (visitanteFile && visitanteFile.files[0]) {
+      const formData = new FormData();
+      formData.append('file', visitanteFile.files[0]);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.url) equipo_visitante_foto = data.url;
+    }
+
+    const res = await fetch(`/api/partidos/${m.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        competicion,
+        jornada,
+        equipo_local_nombre,
+        equipo_local_foto,
+        equipo_visitante_nombre,
+        equipo_visitante_foto,
+        fecha_hora,
+        lugar
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al actualizar el partido');
+
+    closeEditMatchModal();
+    await loadPartidoDetalleView();
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.classList.remove('hidden');
+  }
 }
