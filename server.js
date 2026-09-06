@@ -9,6 +9,7 @@ const authRoutes = require('./src/routes/auth');
 const playerRoutes = require('./src/routes/players');
 const matchRoutes = require('./src/routes/matches');
 const posterRoutes = require('./src/routes/posters');
+const uploadRoutes = require('./src/routes/upload');
 const { requireAuth } = require('./src/middleware/auth');
 
 const app = express();
@@ -21,7 +22,6 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-
 
 // Session management
 app.use(
@@ -55,9 +55,11 @@ app.get('/login', (req, res) => {
 app.use('/api', requireAuth);
 
 // Registered API routes
+app.use('/api/upload', uploadRoutes);
 app.use('/api/jugadores', playerRoutes);
 app.use('/api/partidos', matchRoutes);
 app.use('/api/carteles', posterRoutes);
+
 
 
 

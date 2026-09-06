@@ -51,7 +51,12 @@ async function loadCartelesView() {
         </div>
 
         <div class="form-group flex-1">
-          <label for="posterBgInput">Fondo Personalizado (URL):</label>
+          <label for="posterBgFileInput">Subir Foto de Fondo:</label>
+          <input type="file" id="posterBgFileInput" accept="image/*" onchange="uploadPosterBgFile(this)">
+        </div>
+
+        <div class="form-group flex-1">
+          <label for="posterBgInput">O URL de Fondo:</label>
           <input type="text" id="posterBgInput" value="/images/placeholder-fondo.png" onchange="onPosterBgChange(this.value)" placeholder="/images/placeholder-fondo.png">
         </div>
       </div>
@@ -121,6 +126,25 @@ function onPosterBgChange(url) {
   cartelesState.customBgUrl = url || '/images/placeholder-fondo.png';
   const container = document.getElementById('posterCanvasContainer');
   container.style.backgroundImage = `url('${cartelesState.customBgUrl}')`;
+}
+
+async function uploadPosterBgFile(fileInput) {
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+  try {
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al subir la imagen');
+
+    document.getElementById('posterBgInput').value = data.url;
+    onPosterBgChange(data.url);
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function renderPoster() {

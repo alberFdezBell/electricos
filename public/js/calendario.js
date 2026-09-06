@@ -64,7 +64,11 @@ async function loadCalendarioView() {
               </label>
             </div>
             <div class="form-group">
-              <label for="mLocalFoto">URL de foto/escudo local (opcional)</label>
+              <label for="mLocalFotoFile">Subir Escudo / Foto Local (opcional)</label>
+              <input type="file" id="mLocalFotoFile" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="mLocalFoto">O introducir URL de escudo local</label>
               <input type="text" id="mLocalFoto" placeholder="/images/electricos.png">
             </div>
           </div>
@@ -82,7 +86,11 @@ async function loadCalendarioView() {
               </label>
             </div>
             <div class="form-group">
-              <label for="mVisitanteFoto">URL de foto/escudo visitante (opcional)</label>
+              <label for="mVisitanteFotoFile">Subir Escudo / Foto Visitante (opcional)</label>
+              <input type="file" id="mVisitanteFotoFile" accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="mVisitanteFoto">O introducir URL de escudo visitante</label>
               <input type="text" id="mVisitanteFoto" placeholder="/images/electricos.png">
             </div>
           </div>
@@ -262,16 +270,29 @@ function toggleElectricCheckbox(teamType) {
   }
 }
 
+async function uploadImageFile(fileInput) {
+  if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error al subir la imagen');
+  return data.url;
+}
+
 async function saveMatch(event) {
   event.preventDefault();
   const competicion = document.getElementById('mCompeticion').value;
   const jornada = document.getElementById('mJornada').value;
   const equipo_local_nombre = document.getElementById('mLocalNombre').value.trim();
   const equipo_local_es_electricos = document.getElementById('mLocalElectric').checked;
-  const equipo_local_foto = document.getElementById('mLocalFoto').value.trim();
+  let equipo_local_foto = document.getElementById('mLocalFoto').value.trim();
   const equipo_visitante_nombre = document.getElementById('mVisitanteNombre').value.trim();
   const equipo_visitante_es_electricos = document.getElementById('mVisitanteElectric').checked;
-  const equipo_visitante_foto = document.getElementById('mVisitanteFoto').value.trim();
+  let equipo_visitante_foto = document.getElementById('mVisitanteFoto').value.trim();
   const fecha_hora = document.getElementById('mFechaHora').value;
   const lugar = document.getElementById('mLugar').value.trim();
   const errDiv = document.getElementById('matchFormError');
@@ -279,6 +300,20 @@ async function saveMatch(event) {
   errDiv.classList.add('hidden');
 
   try {
+    // Check for uploaded file images
+    const localFile = document.getElementById('mLocalFotoFile');
+    const visitanteFile = document.getElementById('mVisitanteFotoFile');
+
+    if (localFile && localFile.files[0]) {
+      const uploadedUrl = await uploadImageFile(localFile);
+      if (uploadedUrl) equipo_local_foto = uploadedUrl;
+    }
+
+    if (visitanteFile && visitanteFile.files[0]) {
+      const uploadedUrl = await uploadImageFile(visitanteFile);
+      if (uploadedUrl) equipo_visitante_foto = uploadedUrl;
+    }
+
     const res = await fetch('/api/partidos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
