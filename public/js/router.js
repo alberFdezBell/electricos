@@ -15,7 +15,8 @@ const routes = {
   '/plantilla': () => loadPlantillaView(),
   '/calendario': () => loadCalendarioView(),
   '/carteles': () => loadCartelesView(),
-  '/partido-en-directo': () => loadPartidoDirectoGenericoView()
+  '/directo': () => loadDirectoEspectadorView(),
+  '/partido-en-directo': () => loadPartidoDirectoControlView()
 };
 
 function navigateTo(url) {

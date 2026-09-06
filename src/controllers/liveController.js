@@ -36,12 +36,17 @@ function updateLiveStatus(req, res) {
       return res.status(404).json({ error: 'Partido no encontrado' });
     }
 
+    const newStatus = estado || match.estado;
+    const isRunning = newStatus === '1a_parte' || newStatus === '2a_parte';
+
     const stmt = db.prepare(`
       UPDATE partidos 
-      SET estado = ?, segundos_transcurridos = ?, tiempo_inicio_parte = CURRENT_TIMESTAMP
+      SET estado = ?, 
+          segundos_transcurridos = ?, 
+          tiempo_inicio_parte = CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END
       WHERE id = ?
     `);
-    stmt.run(estado || match.estado, segundos_transcurridos || 0, partidoId);
+    stmt.run(newStatus, segundos_transcurridos || 0, isRunning ? 1 : 0, partidoId);
 
     const updated = fetchFullMatch(partidoId);
     res.json({ success: true, match: updated });

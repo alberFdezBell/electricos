@@ -51,6 +51,11 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/login.html'));
 });
 
+// Directo HTML page for live spectators (public)
+app.get('/directo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
 // Protect all remaining routes and APIs with authentication
 app.use('/api', requireAuth);
 
