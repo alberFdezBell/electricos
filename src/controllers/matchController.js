@@ -82,52 +82,62 @@ function getTopStats(req, res) {
 }
 
 /**
+ * Fetch complete match object with convocatoria, alineacion, and eventos
+ */
+function fetchFullMatch(id) {
+  const match = db.prepare('SELECT * FROM partidos WHERE id = ?').get(id);
+  if (!match) return null;
+
+  match.fecha_formateada = formatFechaEspandol(match.fecha_hora);
+  match.url = getMatchUrl(match);
+  match.url_live = getMatchLiveUrl(match);
+
+  // Fetch squad call-up (convocatoria)
+  const squadQuery = `
+    SELECT j.* FROM jugadores j
+    JOIN convocatorias c ON c.jugador_id = j.id
+    WHERE c.partido_id = ?
+    ORDER BY j.dorsal ASC
+  `;
+  match.convocatoria = db.prepare(squadQuery).all(id);
+
+  // Fetch field lineup (alineación)
+  const lineupQuery = `
+    SELECT a.posicion_campo, j.* FROM alineaciones a
+    JOIN jugadores j ON j.id = a.jugador_id
+    WHERE a.partido_id = ?
+  `;
+  match.alineacion = db.prepare(lineupQuery).all(id);
+
+  // Fetch timeline events (cronología)
+  const eventsQuery = `
+    SELECT 
+      e.*,
+      j.nombre AS jugador_nombre, j.apellidos AS jugador_apellidos, j.dorsal AS jugador_dorsal,
+      a.nombre AS asistente_nombre, a.apellidos AS asistente_apellidos,
+      js.nombre AS sale_nombre, js.apellidos AS sale_apellidos
+    FROM eventos_partido e
+    LEFT JOIN jugadores j ON j.id = e.jugador_id
+    LEFT JOIN jugadores a ON a.id = e.asistente_id
+    LEFT JOIN jugadores js ON js.id = e.jugador_sale_id
+    WHERE e.partido_id = ?
+    ORDER BY e.id ASC
+  `;
+  match.eventos = db.prepare(eventsQuery).all(id);
+
+  return match;
+}
+
+/**
  * Get single match details by ID
  */
 function getMatchById(req, res) {
   try {
     const id = req.params.id;
-    const match = db.prepare('SELECT * FROM partidos WHERE id = ?').get(id);
+    const match = fetchFullMatch(id);
     if (!match) {
       return res.status(404).json({ error: 'Partido no encontrado' });
     }
-
-    match.fecha_formateada = formatFechaEspandol(match.fecha_hora);
-    match.url = getMatchUrl(match);
-    match.url_live = getMatchLiveUrl(match);
-
-    // Fetch squad call-up (convocatoria)
-    const squadQuery = `
-      SELECT j.* FROM jugadores j
-      JOIN convocatorias c ON c.jugador_id = j.id
-      WHERE c.partido_id = ?
-      ORDER BY j.dorsal ASC
-    `;
-    match.convocatoria = db.prepare(squadQuery).all(id);
-
-    // Fetch field lineup (alineación)
-    const lineupQuery = `
-      SELECT a.posicion_campo, j.* FROM alineaciones a
-      JOIN jugadores j ON j.id = a.jugador_id
-      WHERE a.partido_id = ?
-    `;
-    match.alineacion = db.prepare(lineupQuery).all(id);
-
-    // Fetch timeline events (cronología)
-    const eventsQuery = `
-      SELECT 
-        e.*,
-        j.nombre AS jugador_nombre, j.apellidos AS jugador_apellidos, j.dorsal AS jugador_dorsal,
-        a.nombre AS asistente_nombre, a.apellidos AS asistente_apellidos,
-        js.nombre AS sale_nombre, js.apellidos AS sale_apellidos
-      FROM eventos_partido e
-      LEFT JOIN jugadores j ON j.id = e.jugador_id
-      LEFT JOIN jugadores a ON a.id = e.asistente_id
-      LEFT JOIN jugadores js ON js.id = e.jugador_sale_id
-      WHERE e.partido_id = ?
-      ORDER BY e.id ASC
-    `;
-    match.eventos = db.prepare(eventsQuery).all(id);
 
     res.json(match);
   } catch (err) {
@@ -288,6 +298,7 @@ module.exports = {
   getAllMatches,
   getTopStats,
   getMatchById,
+  fetchFullMatch,
   createMatch,
   updateMatch,
   deleteMatch

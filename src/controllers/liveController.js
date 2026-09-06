@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { fetchFullMatch } = require('./matchController');
 
 /**
  * Get active live match (if any match is currently in 1a_parte, descanso, or 2a_parte)
@@ -42,7 +43,7 @@ function updateLiveStatus(req, res) {
     `);
     stmt.run(estado || match.estado, segundos_transcurridos || 0, partidoId);
 
-    const updated = db.prepare('SELECT * FROM partidos WHERE id = ?').get(partidoId);
+    const updated = fetchFullMatch(partidoId);
     res.json({ success: true, match: updated });
   } catch (err) {
     console.error('Error updating live status:', err);
@@ -122,7 +123,7 @@ function addLiveEvent(req, res) {
       `).run(jugador_id, partidoId, jugador_sale_id);
     }
 
-    const updatedMatch = db.prepare('SELECT * FROM partidos WHERE id = ?').get(partidoId);
+    const updatedMatch = fetchFullMatch(partidoId);
     res.json({ success: true, match: updatedMatch });
   } catch (err) {
     console.error('Error adding live event:', err);
@@ -162,7 +163,7 @@ function deleteLiveEvent(req, res) {
 
     db.prepare('DELETE FROM eventos_partido WHERE id = ?').run(eventId);
 
-    const updatedMatch = db.prepare('SELECT * FROM partidos WHERE id = ?').get(id);
+    const updatedMatch = fetchFullMatch(id);
     res.json({ success: true, match: updatedMatch });
   } catch (err) {
     console.error('Error deleting event:', err);
@@ -191,7 +192,7 @@ function resetMatch(req, res) {
     // Delete all live events for this match
     db.prepare('DELETE FROM eventos_partido WHERE partido_id = ?').run(partidoId);
 
-    const updated = db.prepare('SELECT * FROM partidos WHERE id = ?').get(partidoId);
+    const updated = fetchFullMatch(partidoId);
     res.json({ success: true, message: 'Partido reiniciado correctamente', match: updated });
   } catch (err) {
     console.error('Error resetting match:', err);
