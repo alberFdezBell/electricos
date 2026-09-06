@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: electricos-app:latest
+    container_name: electricos_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DB_PATH=/app/data/electricos.db
+      - SESSION_SECRET=${SESSION_SECRET:-electricos_fc_secret_key_2026}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-electricos2026}
+    volumes:
+      - electricos_data:/app/data
+      - electricos_uploads:/app/public/uploads
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: electricos_cloudflare_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+
+volumes:
+  electricos_data:
+  electricos_uploads:
