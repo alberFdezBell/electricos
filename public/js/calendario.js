@@ -52,7 +52,10 @@ async function loadCalendarioView() {
           </div>
 
           <div class="team-input-section card">
-            <h4>Equipo Local</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4>Equipo Local</h4>
+              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('local')">🛡️ Elegir guardado</button>
+            </div>
             <div class="form-group">
               <label for="mLocalNombre">Nombre Local *</label>
               <input type="text" id="mLocalNombre" placeholder="Nombre equipo local" required>
@@ -74,7 +77,10 @@ async function loadCalendarioView() {
           </div>
 
           <div class="team-input-section card">
-            <h4>Equipo Visitante</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4>Equipo Visitante</h4>
+              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('visitante')">🛡️ Elegir guardado</button>
+            </div>
             <div class="form-group">
               <label for="mVisitanteNombre">Nombre Visitante *</label>
               <input type="text" id="mVisitanteNombre" placeholder="Nombre equipo visitante" required>
@@ -143,7 +149,10 @@ async function loadCalendarioView() {
           </div>
 
           <div class="team-input-section card">
-            <h4>Equipo Local</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4>Equipo Local</h4>
+              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('editLocal')">🛡️ Elegir guardado</button>
+            </div>
             <div class="form-group">
               <label for="editCalLocalNombre">Nombre Local *</label>
               <input type="text" id="editCalLocalNombre" required>
@@ -159,7 +168,10 @@ async function loadCalendarioView() {
           </div>
 
           <div class="team-input-section card">
-            <h4>Equipo Visitante</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4>Equipo Visitante</h4>
+              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('editVisitante')">🛡️ Elegir guardado</button>
+            </div>
             <div class="form-group">
               <label for="editCalVisitanteNombre">Nombre Visitante *</label>
               <input type="text" id="editCalVisitanteNombre" required>
@@ -193,6 +205,48 @@ async function loadCalendarioView() {
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modal Seleccionar Equipo Guardado -->
+    <div id="selectEquipoModal" class="modal-backdrop hidden">
+      <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3>Seleccionar Equipo Guardado</h3>
+          <button class="modal-close" onclick="closeSelectEquipoModal()">&times;</button>
+        </div>
+        
+        <div style="margin-top: 10px; display: flex; gap: 8px; flex-direction: column;">
+          <input type="text" id="selectEquipoSearch" placeholder="🔍 Buscar equipo por nombre..." oninput="filterSelectEquipoList()" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: var(--slate-medium);">Selecciona un equipo o crea uno rápido:</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleQuickCreateEquipoForm()" style="font-size: 0.8rem; padding: 4px 8px;">+ Crear rápido</button>
+          </div>
+
+          <div id="quickCreateEquipoContainer" class="hidden card" style="padding: 12px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-sm); margin-top: 4px;">
+            <h5 style="margin-bottom: 8px; font-size: 0.85rem; color: var(--dark-navy);">⚡ Crear Equipo Rápido</h5>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input type="text" id="quickEqNombre" placeholder="Nombre del equipo *" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm);">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <label style="font-size: 0.75rem; color: var(--slate-medium);">Escudo / Foto (opcional)</label>
+                <input type="file" id="quickEqFotoFile" accept="image/*" style="font-size: 0.75rem;">
+              </div>
+              <div id="quickEqError" class="alert alert-error hidden" style="padding: 4px 8px; font-size: 0.8rem; margin: 0;"></div>
+              <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="toggleQuickCreateEquipoForm()" style="font-size: 0.8rem;">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveQuickEquipo()" style="font-size: 0.8rem;">Guardar y Usar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="selectEquipoList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 12px; max-height: 300px; overflow-y: auto; padding: 4px;">
+          <div class="loading-spinner">Cargando equipos...</div>
+        </div>
+        <div class="modal-actions" style="margin-top: 16px;">
+          <button type="button" class="btn btn-outline" onclick="closeSelectEquipoModal()">Cancelar</button>
+        </div>
       </div>
     </div>
   `;
@@ -333,6 +387,17 @@ function toggleElectricCheckbox(teamType) {
       inputName.value = 'Eléctricos FC';
       inputFoto.value = '/images/electricos.png';
       inputName.readOnly = true;
+
+      // Desmarcar visitante si estaba marcado
+      const visChk = document.getElementById('mVisitanteElectric');
+      if (visChk && visChk.checked) {
+        visChk.checked = false;
+        const visName = document.getElementById('mVisitanteNombre');
+        const visFoto = document.getElementById('mVisitanteFoto');
+        visName.readOnly = false;
+        if (visName.value === 'Eléctricos FC') visName.value = '';
+        if (visFoto.value === '/images/electricos.png') visFoto.value = '';
+      }
     } else {
       inputName.readOnly = false;
       inputName.value = '';
@@ -347,6 +412,17 @@ function toggleElectricCheckbox(teamType) {
       inputName.value = 'Eléctricos FC';
       inputFoto.value = '/images/electricos.png';
       inputName.readOnly = true;
+
+      // Desmarcar local si estaba marcado
+      const locChk = document.getElementById('mLocalElectric');
+      if (locChk && locChk.checked) {
+        locChk.checked = false;
+        const locName = document.getElementById('mLocalNombre');
+        const locFoto = document.getElementById('mLocalFoto');
+        locName.readOnly = false;
+        if (locName.value === 'Eléctricos FC') locName.value = '';
+        if (locFoto.value === '/images/electricos.png') locFoto.value = '';
+      }
     } else {
       inputName.readOnly = false;
       inputName.value = '';
@@ -520,3 +596,126 @@ async function deleteMatchCalendario(matchId) {
     }
   }
 }
+
+let targetSelectEquipoField = null;
+let allEquiposForSelect = [];
+
+async function openSelectEquipoModal(targetField) {
+  targetSelectEquipoField = targetField;
+  const modal = document.getElementById('selectEquipoModal');
+  const container = document.getElementById('selectEquipoList');
+  const searchInput = document.getElementById('selectEquipoSearch');
+  
+  if (searchInput) searchInput.value = '';
+  document.getElementById('quickCreateEquipoContainer').classList.add('hidden');
+  document.getElementById('quickEqNombre').value = '';
+  document.getElementById('quickEqFotoFile').value = '';
+  document.getElementById('quickEqError').classList.add('hidden');
+
+  modal.classList.remove('hidden');
+  container.innerHTML = '<div class="loading-spinner">Cargando equipos...</div>';
+
+  try {
+    const res = await fetch('/api/equipos');
+    if (!res.ok) throw new Error('Error al cargar equipos');
+    allEquiposForSelect = await res.json();
+    renderSelectEquipoList(allEquiposForSelect);
+  } catch (err) {
+    container.innerHTML = `<div class="alert alert-error" style="grid-column: 1/-1;">${err.message}</div>`;
+  }
+}
+
+function renderSelectEquipoList(list) {
+  const container = document.getElementById('selectEquipoList');
+  if (!container) return;
+
+  if (list.length === 0) {
+    container.innerHTML = '<p class="empty-text" style="grid-column: 1/-1;">No se encontraron equipos.</p>';
+    return;
+  }
+
+  container.innerHTML = list.map(eq => `
+    <div class="card" onclick="selectEquipoForMatch('${eq.nombre.replace(/'/g, "\\'")}', '${(eq.foto || '').replace(/'/g, "\\'")}')" style="cursor: pointer; text-align: center; padding: 12px; transition: transform 0.15s, border-color 0.15s; border: 1px solid var(--border-light);" onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.transform='scale(1.02)';" onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='scale(1)';">
+      <img src="${eq.foto || '/images/default-team.webp'}" alt="${eq.nombre}" style="width: 48px; height: 48px; object-fit: contain; margin: 0 auto 8px auto; display: block; background: #f1f5f9; padding: 4px; border-radius: 8px;" onerror="this.src='/images/default-team.webp'">
+      <strong style="font-size: 0.85rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${eq.nombre}</strong>
+    </div>
+  `).join('');
+}
+
+function filterSelectEquipoList() {
+  const query = document.getElementById('selectEquipoSearch').value.trim().toLowerCase();
+  if (!query) {
+    renderSelectEquipoList(allEquiposForSelect);
+    return;
+  }
+  const filtered = allEquiposForSelect.filter(e => e.nombre.toLowerCase().includes(query));
+  renderSelectEquipoList(filtered);
+}
+
+function toggleQuickCreateEquipoForm() {
+  const form = document.getElementById('quickCreateEquipoContainer');
+  form.classList.toggle('hidden');
+}
+
+async function saveQuickEquipo() {
+  const nombreInput = document.getElementById('quickEqNombre');
+  const fileInput = document.getElementById('quickEqFotoFile');
+  const errDiv = document.getElementById('quickEqError');
+
+  const nombre = nombreInput.value.trim();
+  if (!nombre) {
+    errDiv.textContent = 'El nombre del equipo es obligatorio';
+    errDiv.classList.remove('hidden');
+    return;
+  }
+
+  errDiv.classList.add('hidden');
+
+  try {
+    const formData = new FormData();
+    formData.append('nombre', nombre);
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      formData.append('foto', fileInput.files[0]);
+    }
+
+    const res = await fetch('/api/equipos', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al crear equipo');
+
+    const newTeam = data.team;
+    selectEquipoForMatch(newTeam.nombre, newTeam.foto || '');
+  } catch (err) {
+    errDiv.textContent = err.message;
+    errDiv.classList.remove('hidden');
+  }
+}
+
+function closeSelectEquipoModal() {
+  document.getElementById('selectEquipoModal').classList.add('hidden');
+}
+
+function selectEquipoForMatch(nombre, foto) {
+  if (targetSelectEquipoField === 'local') {
+    document.getElementById('mLocalNombre').value = nombre;
+    document.getElementById('mLocalFoto').value = foto;
+    const chk = document.getElementById('mLocalElectric');
+    if (chk) { chk.checked = false; document.getElementById('mLocalNombre').readOnly = false; }
+  } else if (targetSelectEquipoField === 'visitante') {
+    document.getElementById('mVisitanteNombre').value = nombre;
+    document.getElementById('mVisitanteFoto').value = foto;
+    const chk = document.getElementById('mVisitanteElectric');
+    if (chk) { chk.checked = false; document.getElementById('mVisitanteNombre').readOnly = false; }
+  } else if (targetSelectEquipoField === 'editLocal') {
+    document.getElementById('editCalLocalNombre').value = nombre;
+    document.getElementById('editCalLocalFoto').value = foto;
+  } else if (targetSelectEquipoField === 'editVisitante') {
+    document.getElementById('editCalVisitanteNombre').value = nombre;
+    document.getElementById('editCalVisitanteFoto').value = foto;
+  }
+  closeSelectEquipoModal();
+}
+

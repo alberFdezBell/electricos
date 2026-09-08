@@ -95,6 +95,13 @@ function initDatabase() {
       estilo_json TEXT NOT NULL,
       es_predeterminada INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS equipos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE,
+      foto TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `;
 
   db.exec(schema);

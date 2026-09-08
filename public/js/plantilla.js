@@ -106,7 +106,7 @@ function renderPlantillaList() {
     <div class="player-card">
       <div class="player-card-header">
         <span class="player-dorsal">#${j.dorsal}</span>
-        <img src="${j.foto || '/images/electricos.png'}" alt="${j.nombre}" class="player-avatar" onerror="this.src='/images/electricos.png'">
+        <img src="${j.foto || '/images/default-icon.webp'}" alt="${j.nombre}" class="player-avatar" onerror="this.src='/images/default-icon.webp'">
         <div class="player-info">
           <h3>${j.nombre} ${j.apellidos}</h3>
           <span class="player-position-badge">${j.posicion}</span>

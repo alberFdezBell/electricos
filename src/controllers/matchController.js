@@ -171,8 +171,8 @@ function createMatch(req, res) {
     const localIsElectric = equipo_local_es_electricos ? 1 : 0;
     const awayIsElectric = equipo_visitante_es_electricos ? 1 : 0;
 
-    const localFoto = localIsElectric ? '/images/electricos.png' : (equipo_local_foto || '/images/electricos.png');
-    const awayFoto = awayIsElectric ? '/images/electricos.png' : (equipo_visitante_foto || '/images/electricos.png');
+    const localFoto = localIsElectric ? '/images/electricos.png' : (equipo_local_foto || '');
+    const awayFoto = awayIsElectric ? '/images/electricos.png' : (equipo_visitante_foto || '');
     const localNombre = localIsElectric ? 'Eléctricos FC' : equipo_local_nombre;
     const awayNombre = awayIsElectric ? 'Eléctricos FC' : equipo_visitante_nombre;
 
@@ -258,10 +258,10 @@ function updateMatch(req, res) {
       competicion || match.competicion,
       jornada ? parseInt(jornada, 10) : match.jornada,
       localIsElectric ? 'Eléctricos FC' : (equipo_local_nombre || match.equipo_local_nombre),
-      localIsElectric ? '/images/electricos.png' : (equipo_local_foto || match.equipo_local_foto),
+      localIsElectric ? '/images/electricos.png' : (equipo_local_foto || match.equipo_local_foto || ''),
       localIsElectric,
       awayIsElectric ? 'Eléctricos FC' : (equipo_visitante_nombre || match.equipo_visitante_nombre),
-      awayIsElectric ? '/images/electricos.png' : (equipo_visitante_foto || match.equipo_visitante_foto),
+      awayIsElectric ? '/images/electricos.png' : (equipo_visitante_foto || match.equipo_visitante_foto || ''),
       awayIsElectric,
       fecha_hora || match.fecha_hora,
       lugar || match.lugar,
@@ -297,6 +297,117 @@ function deleteMatch(req, res) {
   }
 }
 
+let clasificacionCache = null;
+let lastClasificacionFetchTime = 0;
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutos de cache
+
+async function fetchLiveClasificacion() {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Referer': 'https://imd.sevilla.org/app/jjddmm_resultados/'
+  };
+
+  const getRes = await fetch('https://imd.sevilla.org/app/jjddmm_resultados/', { headers });
+  const rawCookie = getRes.headers.get('set-cookie');
+  const cookieHeader = rawCookie ? rawCookie.split(';')[0] : '';
+
+  const params = new URLSearchParams({
+    opc: '3',
+    provisional: '2',
+    com: '',
+    dis: '',
+    busqueda: '',
+    idequipo: 'DBE66A30-137C-4416-BEDC-A8CE73BF7758',
+    jor: ''
+  });
+
+  const postRes = await fetch('https://imd.sevilla.org/app/jjddmm_resultados/resultados.php', {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Cookie': cookieHeader
+    },
+    body: params.toString()
+  });
+
+  if (!postRes.ok) {
+    throw new Error(`Error en servidor de la IMD (${postRes.status})`);
+  }
+
+  const buf = await postRes.arrayBuffer();
+  const html = new TextDecoder('latin1').decode(buf);
+
+  let jornadaTitle = 'Clasificación Oficial';
+  const jorMatch = html.match(/Jornada\s+N[^\s<]*\.\s*\d+[^<]*/i);
+  if (jorMatch) {
+    jornadaTitle = jorMatch[0].replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  const rows = [];
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let trMatch;
+
+  while ((trMatch = trRegex.exec(html)) !== null) {
+    const trContent = trMatch[1];
+    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    const tds = [];
+    let tdMatch;
+    while ((tdMatch = tdRegex.exec(trContent)) !== null) {
+      const text = tdMatch[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+      tds.push(text);
+    }
+
+    if (tds.length === 9 && /^\d+\s*-\s*/.test(tds[0])) {
+      const posMatch = tds[0].match(/^(\d+)\s*-\s*(.*)$/);
+      const pos = posMatch ? parseInt(posMatch[1], 10) : rows.length + 1;
+      const teamName = posMatch ? posMatch[2].trim() : tds[0];
+      const isElectricos = /el[eé]ctricos/i.test(teamName);
+
+      rows.push({
+        posicion: pos,
+        equipo: teamName,
+        pj: parseInt(tds[1], 10) || 0,
+        pg: parseInt(tds[2], 10) || 0,
+        pe: parseInt(tds[3], 10) || 0,
+        pp: parseInt(tds[4], 10) || 0,
+        pnp: parseInt(tds[5], 10) || 0,
+        tf: parseInt(tds[6], 10) || 0,
+        tc: parseInt(tds[7], 10) || 0,
+        puntos: parseInt(tds[8], 10) || 0,
+        isElectricos
+      });
+    }
+  }
+
+  return {
+    titulo: jornadaTitle,
+    equipos: rows,
+    fetchedAt: new Date().toISOString()
+  };
+}
+
+async function getClasificacion(req, res) {
+  try {
+    const now = Date.now();
+    if (clasificacionCache && (now - lastClasificacionFetchTime < CACHE_DURATION_MS)) {
+      return res.json(clasificacionCache);
+    }
+
+    const data = await fetchLiveClasificacion();
+    clasificacionCache = data;
+    lastClasificacionFetchTime = now;
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching clasificacion:', err);
+    if (clasificacionCache) {
+      return res.json(clasificacionCache);
+    }
+    res.status(500).json({ error: 'Error al consultar la clasificación oficial' });
+  }
+}
+
 module.exports = {
   getAllMatches,
   getTopStats,
@@ -304,5 +415,6 @@ module.exports = {
   fetchFullMatch,
   createMatch,
   updateMatch,
-  deleteMatch
+  deleteMatch,
+  getClasificacion
 };

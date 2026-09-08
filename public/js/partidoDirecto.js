@@ -85,7 +85,21 @@ async function loadDirectoEspectadorView() {
           <h2 style="font-size: 1.5rem; margin-bottom: 8px;">⏱️ No hay partidos en directo</h2>
           <p style="color: var(--slate-medium);">No hay ningún encuentro de Eléctricos FC en juego en este momento.</p>
         </div>
+
+        <!-- Clasificación Oficial IMD Sevilla -->
+        <div class="card clasificacion-card" style="margin-top: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin: 0;">
+              <span>Clasificación</span>
+              <span id="clasificacionJornadaBadgeDirecto" class="pill pill-liga" style="font-size: 0.75rem;">Cargando...</span>
+            </h3>
+          </div>
+          <div id="clasificacionContainerDirecto" style="overflow-x: auto;">
+            <div class="loading-spinner">Cargando clasificación...</div>
+          </div>
+        </div>
       `;
+      fetchDirectoClasificacion();
     }
   } catch (err) {
     container.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
@@ -170,18 +184,18 @@ function renderLivePage() {
     <!-- Sticky Live Score Header -->
     <div class="live-sticky-header card">
       <div class="live-team">
-        <img src="${m.equipo_local_foto}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/electricos.png'">
+        <img src="${m.equipo_local_foto || '/images/default-team.webp'}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/default-team.webp'">
         <span class="live-team-name">${m.equipo_local_nombre}</span>
       </div>
 
       <div class="live-scoreboard">
         <div class="live-score">${m.goles_local} - ${m.goles_visitante}</div>
-        <div class="live-timer-badge" id="liveTimerDisplay">${formatTime(liveState.elapsedSeconds)}</div>
+        <div class="live-timer-badge" id="liveTimerDisplay">${formatTime(liveState.elapsedSeconds, m.estado)}</div>
         <span class="live-status-text">${getStatusLabel(m.estado)}</span>
       </div>
 
       <div class="live-team">
-        <img src="${m.equipo_visitante_foto}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/electricos.png'">
+        <img src="${m.equipo_visitante_foto || '/images/default-team.webp'}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/default-team.webp'">
         <span class="live-team-name">${m.equipo_visitante_nombre}</span>
       </div>
     </div>
@@ -266,12 +280,25 @@ function renderLivePage() {
       <div class="timeline-list" id="liveTimelineList">
         ${m.eventos && m.eventos.length > 0 ? m.eventos.map(e => `
           <div class="timeline-item">
-            <span class="timeline-min">${e.minuto}'</span>
+            <span class="timeline-min">${formatMinuteDisplay(e.minuto, e.periodo)}</span>
             <span class="timeline-icon">${getEventIcon(e.tipo)}</span>
             <span class="timeline-desc">${getEventDescription(e)}</span>
             ${!readOnly && !isFinished ? `<button class="undo-btn" onclick="undoEvent(${e.id})" title="Deshacer">&times;</button>` : ''}
           </div>
         `).join('') : '<p class="empty-text">No hay eventos registrados en este partido.</p>'}
+      </div>
+    </div>
+
+    <!-- Clasificación Oficial IMD Sevilla -->
+    <div class="card clasificacion-card" style="margin-top: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin: 0;">
+          <span>Clasificación</span>
+          <span id="clasificacionJornadaBadgeDirecto" class="pill pill-liga" style="font-size: 0.75rem;">Cargando...</span>
+        </h3>
+      </div>
+      <div id="clasificacionContainerDirecto" style="overflow-x: auto;">
+        <div class="loading-spinner">Cargando clasificación...</div>
       </div>
     </div>
 
@@ -309,49 +336,49 @@ function renderLivePage() {
               </select>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">Registrar Gol ⚽</button>
+            <button type="submit" class="btn btn-primary btn-block">Añadir Gol Eléctricos</button>
           </form>
 
-          <!-- Form Tarjeta Eléctricos -->
+          <!-- Form Tarjetas Eléctricos -->
           <form id="formTarjetaElectric" class="action-form hidden" onsubmit="submitElectricCard(event)">
             <div class="form-group">
-              <label for="cardType">Tipo de Tarjeta *</label>
-              <select id="cardType" required>
-                <option value="tarjeta_amarilla">🟨 Tarjeta Amarilla</option>
-                <option value="tarjeta_roja">🟥 Tarjeta Roja</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="cardPlayer">Jugador Afectado *</label>
+              <label for="cardPlayer">Jugador *</label>
               <select id="cardPlayer" required>
                 <option value="">Selecciona jugador...</option>
                 ${convocatoriaPlayers.map(p => `<option value="${p.id}">#${p.dorsal} ${p.nombre} ${p.apellidos}</option>`).join('')}
               </select>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">Registrar Tarjeta</button>
-          </form>
-
-          <!-- Form Cambio Eléctricos -->
-          <form id="formCambioElectric" class="action-form hidden" onsubmit="submitElectricSub(event)">
             <div class="form-group">
-              <label for="subIn">Jugador que ENTRA *</label>
-              <select id="subIn" required>
-                <option value="">Selecciona quién entra...</option>
-                ${benchPlayers.map(p => `<option value="${p.id}">#${p.dorsal} ${p.nombre} ${p.apellidos}</option>`).join('')}
+              <label for="cardType">Tipo de Tarjeta *</label>
+              <select id="cardType" required>
+                <option value="tarjeta_amarilla">🟨 Amarilla</option>
+                <option value="tarjeta_roja">🟥 Roja</option>
               </select>
             </div>
 
+            <button type="submit" class="btn btn-primary btn-block">Registrar Tarjeta</button>
+          </form>
+
+          <!-- Form Cambios Eléctricos -->
+          <form id="formCambioElectric" class="action-form hidden" onsubmit="submitElectricSub(event)">
             <div class="form-group">
-              <label for="subOut">Jugador que SALE *</label>
+              <label for="subOut">Jugador que SALE (En campo) *</label>
               <select id="subOut" required>
                 <option value="">Selecciona quién sale...</option>
                 ${onPitchPlayers.map(p => `<option value="${p.id}">#${p.dorsal} ${p.nombre} ${p.apellidos}</option>`).join('')}
               </select>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block">Registrar Cambio 🔄</button>
+            <div class="form-group">
+              <label for="subIn">Jugador que ENTRA (En banquillo) *</label>
+              <select id="subIn" required>
+                <option value="">Selecciona quién entra...</option>
+                ${benchPlayers.map(p => `<option value="${p.id}">#${p.dorsal} ${p.nombre} ${p.apellidos}</option>`).join('')}
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Registrar Cambio</button>
           </form>
         </div>
       </div>
@@ -360,7 +387,7 @@ function renderLivePage() {
       <div id="rivalActionModal" class="modal-backdrop hidden">
         <div class="modal-card">
           <div class="modal-header">
-            <h3>Acción del Rival 🛡️</h3>
+            <h3>Acción del Equipo Rival 🛡️</h3>
             <button class="modal-close" onclick="closeRivalActionModal()">&times;</button>
           </div>
 
@@ -374,6 +401,71 @@ function renderLivePage() {
       </div>
     ` : ''}
   `;
+
+  fetchDirectoClasificacion();
+}
+
+async function fetchDirectoClasificacion() {
+  const container = document.getElementById('clasificacionContainerDirecto');
+  const badge = document.getElementById('clasificacionJornadaBadgeDirecto');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/partidos/clasificacion');
+    if (!res.ok) throw new Error('No se pudo cargar la clasificación');
+    const data = await res.json();
+
+    if (badge) badge.textContent = data.titulo || 'Clasificación';
+
+    if (!data.equipos || data.equipos.length === 0) {
+      container.innerHTML = '<p class="empty-text">No hay datos de clasificación disponibles.</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="clasificacion-table">
+        <thead>
+          <tr>
+            <th class="th-pos"> </th>
+            <th class="th-team">Equipo</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PE</th>
+            <th>PP</th>
+            <th>PNP</th>
+            <th>TF</th>
+            <th>TC</th>
+            <th>DIF</th>
+            <th class="th-pts">PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.equipos.map(eq => {
+            const dif = eq.tf - eq.tc;
+            const difFormatted = dif > 0 ? `+${dif}` : `${dif}`;
+            const rowClass = eq.isElectricos ? 'row-electricos' : '';
+            return `
+              <tr class="${rowClass}">
+                <td class="td-pos">${eq.isElectricos ? ' ' : ''}${eq.posicion}</td>
+                <td class="td-team">${eq.equipo}</td>
+                <td>${eq.pj}</td>
+                <td>${eq.pg}</td>
+                <td>${eq.pe}</td>
+                <td>${eq.pp}</td>
+                <td>${eq.pnp}</td>
+                <td>${eq.tf}</td>
+                <td>${eq.tc}</td>
+                <td class="td-dif">${difFormatted}</td>
+                <td class="td-pts"><strong>${eq.puntos}</strong></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="alert alert-error" style="font-size: 0.85rem;">${err.message}</div>`;
+  }
 }
 
 function setupTimer() {
@@ -386,14 +478,14 @@ function setupTimer() {
     
     const timerDisplay = document.getElementById('liveTimerDisplay');
     if (timerDisplay) {
-      timerDisplay.textContent = formatTime(liveState.elapsedSeconds);
+      timerDisplay.textContent = formatTime(liveState.elapsedSeconds, state);
     }
 
     liveState.timerInterval = setInterval(() => {
       liveState.elapsedSeconds = calculateElapsedSeconds(liveState.match);
       const timerDisplay = document.getElementById('liveTimerDisplay');
       if (timerDisplay) {
-        timerDisplay.textContent = formatTime(liveState.elapsedSeconds);
+        timerDisplay.textContent = formatTime(liveState.elapsedSeconds, state);
       }
     }, 1000);
   } else {
@@ -401,20 +493,66 @@ function setupTimer() {
     liveState.elapsedSeconds = calculateElapsedSeconds(liveState.match);
     const timerDisplay = document.getElementById('liveTimerDisplay');
     if (timerDisplay) {
-      timerDisplay.textContent = formatTime(liveState.elapsedSeconds);
+      timerDisplay.textContent = formatTime(liveState.elapsedSeconds, state);
     }
   }
 }
 
 function getCurrentMinute() {
   const mins = Math.floor(liveState.elapsedSeconds / 60);
-  if (liveState.match.estado === '2a_parte') {
-    return Math.max(26, mins + 25);
+  const state = liveState.match ? liveState.match.estado : '1a_parte';
+  if (state === '2a_parte') {
+    return 25 + mins;
   }
-  return Math.max(1, mins);
+  return mins;
 }
 
-function formatTime(totalSecs) {
+function formatMinuteDisplay(minuto, periodo) {
+  if (minuto === undefined || minuto === null || minuto === '') return '';
+  const min = parseInt(minuto, 10);
+  if (isNaN(min)) return '';
+
+  if (periodo === '1a_parte') {
+    if (min <= 25) return `${min}'`;
+    return `25 + ${min - 25}'`;
+  } else if (periodo === '2a_parte') {
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  } else {
+    if (min <= 25) return `${min}'`;
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  }
+}
+
+function formatTime(totalSecs, estado) {
+  const currentEstado = estado || (liveState.match ? liveState.match.estado : '1a_parte');
+
+  if (currentEstado === '1a_parte') {
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    if (mins < 25) {
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    } else {
+      const extraMins = mins - 25;
+      return `25:00 + ${extraMins}:${String(secs).padStart(2, '0')}`;
+    }
+  } else if (currentEstado === '2a_parte') {
+    const currentTotalSecs = 1500 + totalSecs; // Segunda parte arranca en el 25' (1500 segs)
+    const mins = Math.floor(currentTotalSecs / 60);
+    const secs = currentTotalSecs % 60;
+    if (mins < 50) {
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    } else {
+      const extraMins = mins - 50;
+      return `50:00 + ${extraMins}:${String(secs).padStart(2, '0')}`;
+    }
+  } else if (currentEstado === 'descanso') {
+    return '25:00 (Descanso)';
+  } else if (currentEstado === 'finalizado') {
+    return '50:00 (Final)';
+  }
+
   const m = Math.floor(totalSecs / 60);
   const s = totalSecs % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;

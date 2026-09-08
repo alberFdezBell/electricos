@@ -109,7 +109,7 @@ function renderMatchDetailPage() {
     <div class="card match-detail-header">
       <div class="match-detail-top">
         <div class="team-hero">
-          <img src="${m.equipo_local_foto}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/electricos.png'">
+          <img src="${m.equipo_local_foto || '/images/default-team.webp'}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/default-team.webp'">
           <h2>${m.equipo_local_nombre}</h2>
         </div>
 
@@ -120,7 +120,7 @@ function renderMatchDetailPage() {
         </div>
 
         <div class="team-hero">
-          <img src="${m.equipo_visitante_foto}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/electricos.png'">
+          <img src="${m.equipo_visitante_foto || '/images/default-team.webp'}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/default-team.webp'">
           <h2>${m.equipo_visitante_nombre}</h2>
         </div>
       </div>
@@ -306,7 +306,7 @@ function renderPitchSlots() {
       <div class="pitch-slot" style="top: ${slot.top}; left: ${slot.left};" onclick="openFifaSelectorModal('${slot.id}')">
         ${player ? `
           <div class="slot-player-card">
-            <img src="${player.foto || '/images/electricos.png'}" class="slot-avatar" onerror="this.src='/images/electricos.png'">
+            <img src="${player.foto || '/images/default-icon.webp'}" class="slot-avatar" onerror="this.src='/images/default-icon.webp'">
             <span class="slot-dorsal">#${player.dorsal}</span>
             <span class="slot-name">${player.nombre}</span>
           </div>
@@ -335,7 +335,7 @@ function openConvocatoriaModal() {
     return `
       <label class="convocatoria-item">
         <input type="checkbox" value="${p.id}" ${isChecked ? 'checked' : ''}>
-        <img src="${p.foto || '/images/electricos.png'}" class="conv-avatar" onerror="this.src='/images/electricos.png'">
+        <img src="${p.foto || '/images/default-icon.webp'}" class="conv-avatar" onerror="this.src='/images/default-icon.webp'">
         <div class="conv-info">
           <span class="conv-name">#${p.dorsal} ${p.nombre} ${p.apellidos}</span>
           <span class="conv-pos">${p.posicion}</span>
@@ -423,7 +423,7 @@ function openFifaSelectorModal(slotId) {
               <span class="fifa-pos">${p.posicion.slice(0, 3).toUpperCase()}</span>
               ${isNatural ? '<span class="natural-badge">⭐ Ideal</span>' : ''}
               ${isAssignedElsewhere ? '<span class="assigned-badge">📍 En campo</span>' : ''}
-              <img src="${p.foto || '/images/electricos.png'}" class="fifa-photo" onerror="this.src='/images/electricos.png'">
+              <img src="${p.foto || '/images/default-icon.webp'}" class="fifa-photo" onerror="this.src='/images/default-icon.webp'">
               <div class="fifa-name">${p.nombre}</div>
             </div>
           </div>
@@ -475,6 +475,22 @@ async function saveLineupToServer() {
   } catch (err) {
     alert(err.message);
   }
+function formatMinuteDisplay(minuto, periodo) {
+  if (minuto === undefined || minuto === null || minuto === '') return '';
+  const min = parseInt(minuto, 10);
+  if (isNaN(min)) return '';
+
+  if (periodo === '1a_parte') {
+    if (min <= 25) return `${min}'`;
+    return `25 + ${min - 25}'`;
+  } else if (periodo === '2a_parte') {
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  } else {
+    if (min <= 25) return `${min}'`;
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  }
 }
 
 function renderEventRowHTML(e) {
@@ -483,17 +499,28 @@ function renderEventRowHTML(e) {
 
   if (e.tipo === 'gol') {
     icon = '⚽';
-    const scorer = e.jugador_nombre ? `${e.jugador_nombre} ${e.jugador_apellidos}` : (e.es_electricos ? 'Jugador Eléctricos' : 'Rival');
-    const assist = e.asistente_nombre ? ` (Asist: ${e.asistente_nombre} ${e.asistente_apellidos})` : '';
-    text = `Gol de ${scorer}${assist}`;
+    if (e.es_electricos) {
+      text = `Gol de ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
+      if (e.asistente_nombre) {
+        text += ` (Asistencia: ${e.asistente_nombre} ${e.asistente_apellidos})`;
+      }
+    } else {
+      text = `Gol de ${matchDetailState.match.equipo_visitante_nombre}`;
+    }
   } else if (e.tipo === 'tarjeta_amarilla') {
     icon = '🟨';
-    const player = e.jugador_nombre ? `${e.jugador_nombre} ${e.jugador_apellidos}` : 'Rival';
-    text = `Tarjeta Amarilla para ${player}`;
+    if (e.es_electricos) {
+      text = `Tarjeta Amarilla para ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
+    } else {
+      text = `Tarjeta Amarilla para ${matchDetailState.match.equipo_visitante_nombre}`;
+    }
   } else if (e.tipo === 'tarjeta_roja') {
     icon = '🟥';
-    const player = e.jugador_nombre ? `${e.jugador_nombre} ${e.jugador_apellidos}` : 'Rival';
-    text = `Tarjeta Roja para ${player}`;
+    if (e.es_electricos) {
+      text = `Tarjeta Roja para ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
+    } else {
+      text = `Tarjeta Roja para ${matchDetailState.match.equipo_visitante_nombre}`;
+    }
   } else if (e.tipo === 'cambio') {
     icon = '🔄';
     if (e.es_electricos) {
@@ -505,7 +532,7 @@ function renderEventRowHTML(e) {
 
   return `
     <div class="timeline-item">
-      <span class="timeline-min">${e.minuto}'</span>
+      <span class="timeline-min">${formatMinuteDisplay(e.minuto, e.periodo)}</span>
       <span class="timeline-icon">${icon}</span>
       <span class="timeline-desc">${text}</span>
     </div>

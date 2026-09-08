@@ -8,31 +8,30 @@ let landingState = {
 async function loadLandingView() {
   const container = document.getElementById('app-view');
   container.innerHTML = `
-    <div class="landing-hero card">
-      <div class="hero-brand">
-        <img src="/images/electricos.png" alt="Eléctricos FC Logo">
-        <div>
-          <h2>Eléctricos FC — Panel de Control</h2>
-          <p class="subtitle">Temporada 2026 / Fútbol 7</p>
-        </div>
+    <!-- Clasificación Oficial IMD Sevilla -->
+    <div class="card clasificacion-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; font-size: 1.1rem; margin: 0;">
+          <span>Clasificación</span>
+          <span id="clasificacionJornadaBadge" class="pill pill-liga" style="font-size: 0.75rem;">Cargando...</span>
+        </h3>
       </div>
-      <div class="hero-actions">
-        <a href="/calendario" data-link class="btn btn-primary">📅 Ver Calendario</a>
-        <a href="/plantilla" data-link class="btn btn-dark">👥 Ver Plantilla</a>
+      <div id="clasificacionContainer" style="overflow-x: auto;">
+        <div class="loading-spinner">Cargando clasificación en directo...</div>
       </div>
     </div>
 
     <!-- Top 5 Section -->
     <div class="top-stats-grid">
       <div class="card stat-card">
-        <h3>⚽ Top 5 Goleadores</h3>
+        <h3>Top 5 Goleadores</h3>
         <div id="topGoleadoresList" class="top-list">
           <div class="loading-spinner">Cargando datos...</div>
         </div>
       </div>
 
       <div class="card stat-card">
-        <h3>👟 Top 5 Asistentes</h3>
+        <h3>Top 5 Asistentes</h3>
         <div id="topAsistentesList" class="top-list">
           <div class="loading-spinner">Cargando datos...</div>
         </div>
@@ -54,7 +53,70 @@ async function loadLandingView() {
     </div>
   `;
 
-  await Promise.all([fetchLandingMatches(), fetchLandingTopStats()]);
+  await Promise.all([fetchLandingMatches(), fetchLandingTopStats(), fetchLandingClasificacion()]);
+}
+
+async function fetchLandingClasificacion() {
+  const container = document.getElementById('clasificacionContainer');
+  const badge = document.getElementById('clasificacionJornadaBadge');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/partidos/clasificacion');
+    if (!res.ok) throw new Error('No se pudo cargar la clasificación');
+    const data = await res.json();
+
+    if (badge) badge.textContent = data.titulo || 'Clasificación';
+
+    if (!data.equipos || data.equipos.length === 0) {
+      container.innerHTML = '<p class="empty-text">No hay datos de clasificación disponibles.</p>';
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="clasificacion-table">
+        <thead>
+          <tr>
+            <th class="th-pos"> </th>
+            <th class="th-team">Equipo</th>
+            <th>PJ</th>
+            <th>PG</th>
+            <th>PE</th>
+            <th>PP</th>
+            <th>PNP</th>
+            <th>TF</th>
+            <th>TC</th>
+            <th>DIF</th>
+            <th class="th-pts">PTS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.equipos.map(eq => {
+            const dif = eq.tf - eq.tc;
+            const difFormatted = dif > 0 ? `+${dif}` : `${dif}`;
+            const rowClass = eq.isElectricos ? 'row-electricos' : '';
+            return `
+              <tr class="${rowClass}">
+                <td class="td-pos">${eq.isElectricos ? ' ' : ''}${eq.posicion}</td>
+                <td class="td-team">${eq.equipo}</td>
+                <td>${eq.pj}</td>
+                <td>${eq.pg}</td>
+                <td>${eq.pe}</td>
+                <td>${eq.pp}</td>
+                <td>${eq.pnp}</td>
+                <td>${eq.tf}</td>
+                <td>${eq.tc}</td>
+                <td class="td-dif">${difFormatted}</td>
+                <td class="td-pts"><strong>${eq.puntos}</strong></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    if (container) container.innerHTML = `<div class="alert alert-error" style="font-size: 0.85rem;">${err.message}</div>`;
+  }
 }
 
 async function fetchLandingMatches() {
@@ -90,7 +152,7 @@ function renderTopStats() {
     gList.innerHTML = landingState.topStats.goleadores.map((j, i) => `
       <div class="top-item">
         <span class="top-rank">#${i + 1}</span>
-        <img src="${j.foto || '/images/electricos.png'}" class="top-avatar" onerror="this.src='/images/electricos.png'">
+        <img src="${j.foto || '/images/default-icon.webp'}" class="top-avatar" onerror="this.src='/images/default-icon.webp'">
         <div class="top-name">${j.nombre} ${j.apellidos} <span class="dorsal-tag">#${j.dorsal}</span></div>
         <span class="top-badge">${j.goles} goles</span>
       </div>
@@ -103,7 +165,7 @@ function renderTopStats() {
     aList.innerHTML = landingState.topStats.asistentes.map((j, i) => `
       <div class="top-item">
         <span class="top-rank">#${i + 1}</span>
-        <img src="${j.foto || '/images/electricos.png'}" class="top-avatar" onerror="this.src='/images/electricos.png'">
+        <img src="${j.foto || '/images/default-icon.webp'}" class="top-avatar" onerror="this.src='/images/default-icon.webp'">
         <div class="top-name">${j.nombre} ${j.apellidos} <span class="dorsal-tag">#${j.dorsal}</span></div>
         <span class="top-badge">${j.asistencias} asist.</span>
       </div>
@@ -124,7 +186,7 @@ function renderMatchesSlider() {
       <div class="match-card" onclick="navigateTo('${m.url}')">
         <div class="match-card-top">
           <div class="team-box">
-            <img src="${m.equipo_local_foto}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/electricos.png'">
+            <img src="${m.equipo_local_foto || '/images/default-team.webp'}" alt="${m.equipo_local_nombre}" onerror="this.src='/images/default-team.webp'">
             <span class="team-name">${m.equipo_local_nombre}</span>
           </div>
           <div class="score-vs">
@@ -133,7 +195,7 @@ function renderMatchesSlider() {
               : '<span class="vs">VS</span>'}
           </div>
           <div class="team-box">
-            <img src="${m.equipo_visitante_foto}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/electricos.png'">
+            <img src="${m.equipo_visitante_foto || '/images/default-team.webp'}" alt="${m.equipo_visitante_nombre}" onerror="this.src='/images/default-team.webp'">
             <span class="team-name">${m.equipo_visitante_nombre}</span>
           </div>
         </div>

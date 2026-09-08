@@ -13,6 +13,7 @@ window.fetch = async function (...args) {
 const routes = {
   '/': () => loadLandingView(),
   '/plantilla': () => loadPlantillaView(),
+  '/equipos': () => loadEquiposView(),
   '/calendario': () => loadCalendarioView(),
   '/carteles': () => loadCartelesView(),
   '/directo': () => loadDirectoEspectadorView(),

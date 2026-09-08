@@ -6,6 +6,7 @@ const liveController = require('../controllers/liveController');
 
 router.get('/', matchController.getAllMatches);
 router.get('/top-stats', matchController.getTopStats);
+router.get('/clasificacion', matchController.getClasificacion);
 router.get('/en-directo/activo', liveController.getActiveLiveMatch);
 router.get('/:id', matchController.getMatchById);
 router.post('/', matchController.createMatch);

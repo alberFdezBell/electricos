@@ -9,6 +9,7 @@ const authRoutes = require('./src/routes/auth');
 const playerRoutes = require('./src/routes/players');
 const matchRoutes = require('./src/routes/matches');
 const posterRoutes = require('./src/routes/posters');
+const teamRoutes = require('./src/routes/teams');
 const uploadRoutes = require('./src/routes/upload');
 const { requireAuth } = require('./src/middleware/auth');
 
@@ -64,6 +65,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/jugadores', playerRoutes);
 app.use('/api/partidos', matchRoutes);
 app.use('/api/carteles', posterRoutes);
+app.use('/api/equipos', teamRoutes);
 
 
 
@@ -80,7 +82,7 @@ app.get('*', requireAuth, (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`⚡ Servidor de Eléctricos FC ejecutándose en http://0.0.0.0:${PORT}`);
+  console.log(`⚡ Servidor de Eléctricos FC ejecutándose en http://localhost:${PORT}`);
 });
 
 module.exports = app;

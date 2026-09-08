@@ -72,7 +72,7 @@ function getPlayerById(req, res) {
 function createPlayer(req, res) {
   try {
     const { nombre, apellidos, dorsal, posicion } = req.body;
-    let foto = '/images/electricos.png';
+    let foto = null;
 
     if (req.file) {
       foto = `/uploads/${req.file.filename}`;

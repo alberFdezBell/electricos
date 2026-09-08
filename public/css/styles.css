@@ -1913,8 +1913,71 @@ button, input, select, textarea {
   }
 }
 
+/* Clasificación Table Styles */
+.clasificacion-card {
+  margin-bottom: 24px;
+}
 
+.clasificacion-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: center;
+}
 
+.clasificacion-table th, 
+.clasificacion-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+}
 
+.clasificacion-table th {
+  background-color: var(--dark-navy);
+  color: var(--white);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
 
+.clasificacion-table th.th-team,
+.clasificacion-table td.td-team {
+  text-align: left;
+  font-weight: 600;
+}
 
+.clasificacion-table th.th-pos,
+.clasificacion-table td.td-pos {
+  width: 44px;
+  font-weight: 800;
+}
+
+.clasificacion-table td.td-pts {
+  color: var(--dark-navy);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.clasificacion-table td.td-dif {
+  color: var(--slate-medium);
+  font-size: 0.85rem;
+}
+
+.clasificacion-table tr:hover {
+  background-color: rgba(254, 240, 138, 0.2);
+}
+
+/* Highlight row for LOS ELÉCTRICOS FC */
+.clasificacion-table tr.row-electricos {
+  background-color: #FEF9C3 !important;
+  font-weight: 700;
+  border-left: 4px solid var(--accent-gold);
+}
+
+.clasificacion-table tr.row-electricos td {
+  color: #854D0E;
+}
+
+.clasificacion-table tr.row-electricos td.td-team {
+  font-weight: 800;
+}

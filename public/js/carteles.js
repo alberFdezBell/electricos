@@ -1,4 +1,20 @@
-// Poster Generation & Visual Design Module
+function formatMinuteDisplay(minuto, periodo) {
+  if (minuto === undefined || minuto === null || minuto === '') return '';
+  const min = parseInt(minuto, 10);
+  if (isNaN(min)) return '';
+
+  if (periodo === '1a_parte') {
+    if (min <= 25) return `${min}'`;
+    return `25 + ${min - 25}'`;
+  } else if (periodo === '2a_parte') {
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  } else {
+    if (min <= 25) return `${min}'`;
+    if (min <= 50) return `${min}'`;
+    return `50 + ${min - 50}'`;
+  }
+}
 
 let cartelesState = {
   type: 'alineacion', // 'alineacion', 'resultado', 'anuncio'
@@ -263,7 +279,7 @@ function renderCartelResultado(container, match) {
         <div class="poster-goals-list">
           ${electricosGoals.length > 0 ? electricosGoals.map(g => `
             <div class="poster-goal-item">
-              <span class="goal-min">${g.minuto}'</span>
+              <span class="goal-min">${formatMinuteDisplay(g.minuto, g.periodo)}</span>
               <span class="goal-scorer">⚽ ${g.jugador_nombre ? g.jugador_nombre + ' ' + g.jugador_apellidos : 'Gol Eléctricos'}</span>
               ${g.asistente_nombre ? `<span class="goal-assist">(👟 ${g.asistente_nombre} ${g.asistente_apellidos})</span>` : ''}
             </div>
