@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DEV.md",
+                "file": "FLUJO.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "DEV"
+              "title": "FLUJO"
             }
           }
         ]
@@ -190,17 +190,18 @@
   },
   "active": "96563a9129ce9310",
   "lastOpenFiles": [
-    "public/js/html2canvas.min.js",
     "README.md",
+    "FLUJO.md",
+    "DEV.md",
+    "checklist-verificacion-electricos-fc.md",
+    "public/js/html2canvas.min.js",
     "src/routes/upload.js",
     "docker-compose.yml",
-    "DEV.md",
     "public/images/electricos.png",
     "public/images/placeholder-fondo.png",
     "public/images/no borrar/placeholder-fondo.png",
     "public/images/no borrar/electricos.png",
     "public/images/no borrar",
-    "public/images/Nueva carpeta",
-    "checklist-verificacion-electricos-fc.md"
+    "public/images/Nueva carpeta"
   ]
 }

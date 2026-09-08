@@ -76,8 +76,6 @@ services:
 volumes:
   electricos_data:
   electricos_uploads:
-```
-
 
   tunnel:
     image: cloudflare/cloudflared:latest
