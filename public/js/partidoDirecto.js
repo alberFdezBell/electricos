@@ -82,7 +82,7 @@ async function loadDirectoEspectadorView() {
       // Empty state for spectator view - NO URL REDIRECTS!
       container.innerHTML = `
         <div class="card empty-state" style="text-align: center; padding: 40px 20px;">
-          <h2 style="font-size: 1.5rem; margin-bottom: 8px;">⏱️ No hay partidos en directo</h2>
+          <h2 style="font-size: 1.5rem; margin-bottom: 8px;"><i class="fa-solid fa-stopwatch fi"></i> No hay partidos en directo</h2>
           <p style="color: var(--slate-medium);">No hay ningún encuentro de Eléctricos FC en juego en este momento.</p>
         </div>
 
@@ -134,10 +134,10 @@ async function loadPartidoDirectoControlView(specificMatchId = null) {
     if (!matchId) {
       container.innerHTML = `
         <div class="card empty-state">
-          <h2>⏱️ No hay partido en directo seleccionado</h2>
+          <h2><i class="fa-solid fa-stopwatch fi"></i> No hay partido en directo seleccionado</h2>
           <p>Selecciona un partido del calendario para iniciarlo o gestionarlo en directo.</p>
           <div style="margin-top: 16px;">
-            <a href="/calendario" data-link class="btn btn-primary">📅 Ir al Calendario</a>
+            <a href="/calendario" data-link class="btn btn-primary"><i class="fa-solid fa-calendar-days"></i> Ir al Calendario</a>
           </div>
         </div>
       `;
@@ -177,7 +177,7 @@ function renderLivePage() {
   container.innerHTML = `
     ${readOnly ? `
       <div class="alert alert-info text-center" style="margin-bottom: 12px; font-weight: 600;">
-        🔴 Marcador en tiempo real — Vista Espectador
+        <i class="fa-solid fa-circle fi-red"></i> Marcador en tiempo real — Vista Espectador
       </div>
     ` : ''}
 
@@ -204,19 +204,19 @@ function renderLivePage() {
     ${!readOnly ? `
       <div class="card phase-controls-card">
         ${isProgrammed ? `
-          <button class="btn btn-primary btn-block btn-lg" onclick="startParte(1)">▶️ Empezar 1ª Parte</button>
+          <button class="btn btn-primary btn-block btn-lg" onclick="startParte(1)"><i class="fa-solid fa-play"></i> Empezar 1ª Parte</button>
         ` : ''}
 
         ${isParte1 ? `
-          <button class="btn btn-dark btn-block" onclick="finishParte(1)">⏸️ Finalizar 1ª Parte (Descanso)</button>
+          <button class="btn btn-dark btn-block" onclick="finishParte(1)"><i class="fa-solid fa-pause"></i> Finalizar 1ª Parte (Descanso)</button>
         ` : ''}
 
         ${isDescanso ? `
-          <button class="btn btn-primary btn-block btn-lg" onclick="startParte(2)">▶️ Empezar 2ª Parte</button>
+          <button class="btn btn-primary btn-block btn-lg" onclick="startParte(2)"><i class="fa-solid fa-play"></i> Empezar 2ª Parte</button>
         ` : ''}
 
         ${isParte2 ? `
-          <button class="btn btn-danger btn-block" onclick="finishPartido()">🏁 Finalizar Partido</button>
+          <button class="btn btn-danger btn-block" onclick="finishPartido()"><i class="fa-solid fa-flag-checkered"></i> Finalizar Partido</button>
         ` : ''}
 
         ${isFinished ? `
@@ -225,7 +225,7 @@ function renderLivePage() {
 
         ${!isProgrammed ? `
           <div style="margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 12px;">
-            <button class="btn btn-outline-danger btn-block" onclick="resetPartidoDirecto()">🔄 Reiniciar Partido (Volver al estado inicial)</button>
+            <button class="btn btn-outline-danger btn-block" onclick="resetPartidoDirecto()"><i class="fa-solid fa-rotate"></i> Reiniciar Partido (Volver al estado inicial)</button>
           </div>
         ` : ''}
       </div>
@@ -235,10 +235,10 @@ function renderLivePage() {
     ${!readOnly && !isProgrammed && !isFinished ? `
       <div class="live-action-buttons-grid">
         <button class="btn btn-primary action-btn-large" onclick="openElectricActionModal()">
-          ⚡ Acciones Eléctricos
+          <i class="fa-solid fa-bolt"></i> Acciones Eléctricos
         </button>
         <button class="btn btn-dark action-btn-large" onclick="openRivalActionModal()">
-          🛡️ Acciones Rival
+          <i class="fa-solid fa-shield-halved"></i> Acciones Rival
         </button>
       </div>
     ` : ''}
@@ -248,7 +248,7 @@ function renderLivePage() {
       <h3>Plantilla en Directo</h3>
       <div class="squad-split-grid">
         <div class="squad-column">
-          <h4>🟢 En Campo (${onPitchPlayers.length})</h4>
+          <h4><i class="fa-solid fa-circle fi-green"></i> En Campo (${onPitchPlayers.length})</h4>
           <div class="squad-mini-list">
             ${onPitchPlayers.map(p => `
               <div class="squad-mini-item">
@@ -261,7 +261,7 @@ function renderLivePage() {
         </div>
 
         <div class="squad-column">
-          <h4>🪑 En Banquillo (${benchPlayers.length})</h4>
+          <h4><i class="fa-solid fa-chair"></i> En Banquillo (${benchPlayers.length})</h4>
           <div class="squad-mini-list">
             ${benchPlayers.map(p => `
               <div class="squad-mini-item item-bench">
@@ -308,14 +308,14 @@ function renderLivePage() {
       <div id="electricActionModal" class="modal-backdrop hidden">
         <div class="modal-card">
           <div class="modal-header">
-            <h3>Acción de Eléctricos FC ⚡</h3>
+            <h3><i class="fa-solid fa-bolt"></i> Acción de Eléctricos FC</h3>
             <button class="modal-close" onclick="closeElectricActionModal()">&times;</button>
           </div>
 
           <div class="action-tab-buttons">
-            <button class="btn btn-outline btn-sm active" id="tabGol" onclick="switchActionTab('gol')">⚽ Gol</button>
-            <button class="btn btn-outline btn-sm" id="tabTarjeta" onclick="switchActionTab('tarjeta')">🟨 Tarjeta</button>
-            <button class="btn btn-outline btn-sm" id="tabCambio" onclick="switchActionTab('cambio')">🔄 Cambio</button>
+            <button class="btn btn-outline btn-sm active" id="tabGol" onclick="switchActionTab('gol')"><i class="fa-solid fa-futbol"></i> Gol</button>
+            <button class="btn btn-outline btn-sm" id="tabTarjeta" onclick="switchActionTab('tarjeta')"><i class="fa-solid fa-square fi-yellow"></i> Tarjeta</button>
+            <button class="btn btn-outline btn-sm" id="tabCambio" onclick="switchActionTab('cambio')"><i class="fa-solid fa-rotate"></i> Cambio</button>
           </div>
 
           <!-- Form Gol Eléctricos -->
@@ -352,8 +352,8 @@ function renderLivePage() {
             <div class="form-group">
               <label for="cardType">Tipo de Tarjeta *</label>
               <select id="cardType" required>
-                <option value="tarjeta_amarilla">🟨 Amarilla</option>
-                <option value="tarjeta_roja">🟥 Roja</option>
+                <option value="tarjeta_amarilla">Amarilla</option>
+                <option value="tarjeta_roja">Roja</option>
               </select>
             </div>
 
@@ -387,15 +387,15 @@ function renderLivePage() {
       <div id="rivalActionModal" class="modal-backdrop hidden">
         <div class="modal-card">
           <div class="modal-header">
-            <h3>Acción del Equipo Rival 🛡️</h3>
+            <h3><i class="fa-solid fa-shield-halved"></i> Acción del Equipo Rival</h3>
             <button class="modal-close" onclick="closeRivalActionModal()">&times;</button>
           </div>
 
           <div class="rival-action-options">
-            <button class="btn btn-danger btn-block btn-lg" onclick="submitRivalAction('gol')">⚽ Gol del Rival</button>
-            <button class="btn btn-primary btn-block" onclick="submitRivalAction('tarjeta_amarilla')">🟨 Tarjeta Amarilla Rival</button>
-            <button class="btn btn-dark btn-block" onclick="submitRivalAction('tarjeta_roja')">🟥 Tarjeta Roja Rival</button>
-            <button class="btn btn-outline btn-block" onclick="submitRivalAction('cambio')">🔄 Cambio en el Rival</button>
+            <button class="btn btn-danger btn-block btn-lg" onclick="submitRivalAction('gol')"><i class="fa-solid fa-futbol"></i> Gol del Rival</button>
+            <button class="btn btn-primary btn-block" onclick="submitRivalAction('tarjeta_amarilla')"><i class="fa-solid fa-square fi-yellow"></i> Tarjeta Amarilla Rival</button>
+            <button class="btn btn-dark btn-block" onclick="submitRivalAction('tarjeta_roja')"><i class="fa-solid fa-square fi-red"></i> Tarjeta Roja Rival</button>
+            <button class="btn btn-outline btn-block" onclick="submitRivalAction('cambio')"><i class="fa-solid fa-rotate"></i> Cambio en el Rival</button>
           </div>
         </div>
       </div>
@@ -795,11 +795,11 @@ async function undoEvent(eventId) {
 }
 
 function getEventIcon(tipo) {
-  if (tipo === 'gol') return '⚽';
-  if (tipo === 'tarjeta_amarilla') return '🟨';
-  if (tipo === 'tarjeta_roja') return '🟥';
-  if (tipo === 'cambio') return '🔄';
-  return '📌';
+  if (tipo === 'gol') return '<i class="fa-solid fa-futbol"></i>';
+  if (tipo === 'tarjeta_amarilla') return '<i class="fa-solid fa-square fi-yellow"></i>';
+  if (tipo === 'tarjeta_roja') return '<i class="fa-solid fa-square fi-red"></i>';
+  if (tipo === 'cambio') return '<i class="fa-solid fa-rotate"></i>';
+  return '<i class="fa-solid fa-thumbtack"></i>';
 }
 
 function getEventDescription(e) {

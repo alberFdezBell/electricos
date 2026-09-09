@@ -87,8 +87,8 @@ function renderEquiposGrid() {
         </div>
       </div>
       <div class="player-card-actions" style="margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end;">
-        <button class="btn btn-outline btn-sm" onclick="openEditEquipoModal(${eq.id})">✏️ Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteEquipo(${eq.id})">🗑️ Eliminar</button>
+        <button class="btn btn-outline btn-sm" onclick="openEditEquipoModal(${eq.id})"><i class="fa-solid fa-pen"></i> Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteEquipo(${eq.id})"><i class="fa-solid fa-trash-can"></i> Eliminar</button>
       </div>
     </div>
   `).join('');

@@ -5,204 +5,105 @@ let calendarioState = {
   selectedDay: null
 };
 
+// Borrador del panel visual de programación rápida
+let quickMatchDraft = {
+  local: { nombre: '', foto: '' },
+  visitante: { nombre: '', foto: '' }
+};
+
 async function loadCalendarioView() {
   const container = document.getElementById('app-view');
   container.innerHTML = `
     <div class="view-header">
       <div>
         <h2>Calendario de Partidos</h2>
-        <p class="subtitle">Haz clic en cualquier día para añadir o ver partidos</p>
       </div>
-      <button class="btn btn-primary" onclick="openAddMatchModal()">+ Programar Partido</button>
     </div>
 
     <!-- Month Navigation Header -->
     <div class="calendar-controls card">
       <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">&larr; Anterior</button>
-      <h3 id="calendarMonthTitle">Meses</h3>
+      <h3 id="calendarMonthTitle">Mes</h3>
       <button class="btn btn-outline btn-sm" onclick="changeMonth(1)">Siguiente &rarr;</button>
     </div>
 
-    <!-- 3-Month Container -->
+    <!-- Month Container -->
     <div id="calendarMonthsGrid" class="calendar-months-grid">
       <div class="loading-spinner">Cargando calendario...</div>
     </div>
 
-    <!-- Modal Añadir Partido -->
-    <div id="matchModal" class="modal-backdrop hidden">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>Programar Partido</h3>
-          <button class="modal-close" onclick="closeMatchModal()">&times;</button>
-        </div>
-        <form id="matchForm" onsubmit="saveMatch(event)">
-          <div class="form-group">
-            <label for="mCompeticion">Competición *</label>
-            <select id="mCompeticion" required>
-              <option value="Liga">Liga</option>
-              <option value="Copa Primavera">Copa Primavera</option>
-              <option value="Copa Sevilla">Copa Sevilla</option>
-              <option value="Amistoso">Amistoso</option>
-            </select>
+    <!-- Quick Match Panel (se despliega suavemente bajo el calendario) -->
+    <div id="matchQuickPanelWrapper" class="match-panel-wrapper">
+      <div class="match-panel card">
+        <form id="matchQuickForm" onsubmit="saveQuickMatch(event)">
+          <div class="match-panel-header">
+            <h4><span id="qPanelTitle"><i class="fa-solid fa-calendar-days"></i> Programar Partido</span> <span id="qPanelDateLabel" class="match-panel-date">(—)</span></h4>
           </div>
-
-          <div class="form-group">
-            <label for="mJornada">Número de Jornada *</label>
-            <input type="number" id="mJornada" min="1" value="1" required>
+          <div id="qDayMatchesPill" class="match-day-pill hidden">
+            <span class="pill"><i class="fa-solid fa-thumbtack"></i> Día con partido asignado</span>
           </div>
+          <input type="hidden" id="qMatchId">
 
-          <div class="team-input-section card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4>Equipo Local</h4>
-              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('local')">🛡️ Elegir guardado</button>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="qCompeticion">Competición *</label>
+              <select id="qCompeticion" required>
+                <option value="Liga">Liga</option>
+                <option value="Copa Primavera">Copa Primavera</option>
+                <option value="Copa Sevilla">Copa Sevilla</option>
+                <option value="Amistoso">Amistoso</option>
+              </select>
             </div>
-            <div class="form-group">
-              <label for="mLocalNombre">Nombre Local *</label>
-              <input type="text" id="mLocalNombre" placeholder="Nombre equipo local" required>
-            </div>
-            <div class="form-group checkbox-group">
-              <label>
-                <input type="checkbox" id="mLocalElectric" onchange="toggleElectricCheckbox('local')">
-                Es Eléctricos FC (autorrellena escudo y nombre)
-              </label>
-            </div>
-            <div class="form-group">
-              <label for="mLocalFotoFile">Subir Escudo / Foto Local (opcional)</label>
-              <input type="file" id="mLocalFotoFile" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="mLocalFoto">O introducir URL de escudo local</label>
-              <input type="text" id="mLocalFoto" placeholder="/images/electricos.png">
+            <div class="form-group flex-1">
+              <label for="qJornada">Número de Jornada *</label>
+              <input type="number" id="qJornada" min="1" value="1" required>
             </div>
           </div>
 
-          <div class="team-input-section card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4>Equipo Visitante</h4>
-              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('visitante')">🛡️ Elegir guardado</button>
+          <div class="quick-teams-section">
+            <div class="quick-team-block">
+              <span class="quick-team-label">Local</span>
+              <button type="button" class="quick-team-btn" onclick="openSelectEquipoModal('panelLocal')" title="Elegir equipo local">
+                <img id="qLocalImg" src="/images/default-team.webp" alt="Equipo local" onerror="this.src='/images/default-team.webp'">
+                <span id="qLocalName" class="quick-team-name">Elige equipo</span>
+              </button>
             </div>
-            <div class="form-group">
-              <label for="mVisitanteNombre">Nombre Visitante *</label>
-              <input type="text" id="mVisitanteNombre" placeholder="Nombre equipo visitante" required>
+
+            <div class="quick-vs-separator">
+              <button type="button" class="quick-swap-btn" onclick="swapQuickTeams()" title="Intercambiar local y visitante"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
+              <span class="quick-vs-text">VS</span>
             </div>
-            <div class="form-group checkbox-group">
-              <label>
-                <input type="checkbox" id="mVisitanteElectric" onchange="toggleElectricCheckbox('visitante')">
-                Es Eléctricos FC (autorrellena escudo y nombre)
-              </label>
-            </div>
-            <div class="form-group">
-              <label for="mVisitanteFotoFile">Subir Escudo / Foto Visitante (opcional)</label>
-              <input type="file" id="mVisitanteFotoFile" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="mVisitanteFoto">O introducir URL de escudo visitante</label>
-              <input type="text" id="mVisitanteFoto" placeholder="/images/electricos.png">
+
+            <div class="quick-team-block">
+              <span class="quick-team-label">Visitante</span>
+              <button type="button" class="quick-team-btn" onclick="openSelectEquipoModal('panelVisitante')" title="Elegir equipo visitante">
+                <img id="qVisitanteImg" src="/images/default-team.webp" alt="Equipo visitante" onerror="this.src='/images/default-team.webp'">
+                <span id="qVisitanteName" class="quick-team-name">Elige equipo</span>
+              </button>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group flex-1">
-              <label for="mFechaHora">Fecha y Hora *</label>
-              <input type="datetime-local" id="mFechaHora" required>
+              <label for="qFecha">Fecha *</label>
+              <input type="date" id="qFecha" required>
             </div>
-          </div>
-
-          <div class="form-group">
-            <label for="mLugar">Campo / Lugar *</label>
-            <input type="text" id="mLugar" placeholder="Ej: Polideportivo Triana - Campo 2" required>
-          </div>
-
-          <div id="matchFormError" class="alert alert-error hidden"></div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" onclick="closeMatchModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Partido</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal Editar Partido -->
-    <div id="editMatchCalendarModal" class="modal-backdrop hidden">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h3>✏️ Editar Partido</h3>
-          <button class="modal-close" onclick="closeEditMatchCalendarModal()">&times;</button>
-        </div>
-        <form id="editMatchCalendarForm" onsubmit="saveEditMatchCalendario(event)">
-          <input type="hidden" id="editCalMatchId">
-
-          <div class="form-group">
-            <label for="editCalCompeticion">Competición *</label>
-            <select id="editCalCompeticion" required>
-              <option value="Liga">Liga</option>
-              <option value="Copa Primavera">Copa Primavera</option>
-              <option value="Copa Sevilla">Copa Sevilla</option>
-              <option value="Amistoso">Amistoso</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="editCalJornada">Número de Jornada *</label>
-            <input type="number" id="editCalJornada" min="1" required>
-          </div>
-
-          <div class="team-input-section card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4>Equipo Local</h4>
-              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('editLocal')">🛡️ Elegir guardado</button>
-            </div>
-            <div class="form-group">
-              <label for="editCalLocalNombre">Nombre Local *</label>
-              <input type="text" id="editCalLocalNombre" required>
-            </div>
-            <div class="form-group">
-              <label for="editCalLocalFotoFile">Subir nuevo escudo Local (opcional)</label>
-              <input type="file" id="editCalLocalFotoFile" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="editCalLocalFoto">O URL escudo Local</label>
-              <input type="text" id="editCalLocalFoto">
-            </div>
-          </div>
-
-          <div class="team-input-section card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4>Equipo Visitante</h4>
-              <button type="button" class="btn btn-outline btn-sm" onclick="openSelectEquipoModal('editVisitante')">🛡️ Elegir guardado</button>
-            </div>
-            <div class="form-group">
-              <label for="editCalVisitanteNombre">Nombre Visitante *</label>
-              <input type="text" id="editCalVisitanteNombre" required>
-            </div>
-            <div class="form-group">
-              <label for="editCalVisitanteFotoFile">Subir nuevo escudo Visitante (opcional)</label>
-              <input type="file" id="editCalVisitanteFotoFile" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="editCalVisitanteFoto">O URL escudo Visitante</label>
-              <input type="text" id="editCalVisitanteFoto">
-            </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-group flex-1">
-              <label for="editCalFechaHora">Fecha y Hora *</label>
-              <input type="datetime-local" id="editCalFechaHora" required>
+              <label for="qHora">Hora</label>
+              <input type="time" id="qHora">
             </div>
           </div>
 
           <div class="form-group">
-            <label for="editCalLugar">Campo / Lugar *</label>
-            <input type="text" id="editCalLugar" required>
+            <label for="qLugar">Campo / Lugar *</label>
+            <input type="text" id="qLugar" placeholder="Ej: Polideportivo Alcosa - Campo 2" required>
           </div>
 
-          <div id="editCalMatchError" class="alert alert-error hidden"></div>
+          <div id="quickMatchError" class="alert alert-error hidden"></div>
 
           <div class="modal-actions">
-            <button type="button" class="btn btn-outline" onclick="closeEditMatchCalendarModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            <button type="button" class="btn btn-outline" onclick="closeMatchPanel()">Cancelar</button>
+            <button type="submit" id="qSaveBtn" class="btn btn-primary">Guardar Partido</button>
           </div>
         </form>
       </div>
@@ -216,16 +117,21 @@ async function loadCalendarioView() {
           <button class="modal-close" onclick="closeSelectEquipoModal()">&times;</button>
         </div>
         
-        <div style="margin-top: 10px; display: flex; gap: 8px; flex-direction: column;">
-          <input type="text" id="selectEquipoSearch" placeholder="🔍 Buscar equipo por nombre..." oninput="filterSelectEquipoList()" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem;">
-          
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.8rem; color: var(--slate-medium);">Selecciona un equipo o crea uno rápido:</span>
+        <div style="margin-top: 10px;">
+          <!-- Buscador a ancho completo -->
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <i class="fa-solid fa-magnifying-glass fi"></i>
+            <input type="text" id="selectEquipoSearch" placeholder="Buscar equipo por nombre..." oninput="filterSelectEquipoList()" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; flex: 1;">
+          </div>
+
+          <!-- Botón Crear rápido (debajo del buscador) -->
+          <div style="margin-top: 8px; text-align: right;">
             <button type="button" class="btn btn-outline btn-sm" onclick="toggleQuickCreateEquipoForm()" style="font-size: 0.8rem; padding: 4px 8px;">+ Crear rápido</button>
           </div>
 
-          <div id="quickCreateEquipoContainer" class="hidden card" style="padding: 12px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-sm); margin-top: 4px;">
-            <h5 style="margin-bottom: 8px; font-size: 0.85rem; color: var(--dark-navy);">⚡ Crear Equipo Rápido</h5>
+          <!-- Formulario oculto de creación rápida -->
+          <div id="quickCreateEquipoContainer" class="hidden card" style="padding: 12px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-sm); margin-top: 8px;">
+            <h5 style="margin-bottom: 8px; font-size: 0.85rem; color: var(--dark-navy);"><i class="fa-solid fa-bolt"></i> Crear Equipo Rápido</h5>
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <input type="text" id="quickEqNombre" placeholder="Nombre del equipo *" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm);">
               <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -259,18 +165,21 @@ async function fetchCalendarMatches() {
     const res = await fetch('/api/partidos');
     if (!res.ok) throw new Error('Error al consultar partidos');
     calendarioState.matches = await res.json();
-    render3MonthsCalendar();
+    renderCalendar();
   } catch (err) {
     document.getElementById('calendarMonthsGrid').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
   }
 }
 
 function changeMonth(delta) {
-  calendarioState.currentDate.setMonth(calendarioState.currentDate.getMonth() + delta);
-  render3MonthsCalendar();
+  const d = calendarioState.currentDate;
+  // Anclamos al día 1 para evitar saltos de mes (ej: 31 ene +1 = marzo)
+  calendarioState.currentDate = new Date(d.getFullYear(), d.getMonth() + delta, 1);
+  closeMatchPanel();
+  renderCalendar();
 }
 
-function render3MonthsCalendar() {
+function renderCalendar() {
   const container = document.getElementById('calendarMonthsGrid');
   const title = document.getElementById('calendarMonthTitle');
   const baseDate = new Date(calendarioState.currentDate);
@@ -280,15 +189,10 @@ function render3MonthsCalendar() {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  title.textContent = `${monthNames[baseDate.getMonth()]} ${baseDate.getFullYear()} (Vista de 3 meses)`;
+  title.textContent = `${monthNames[baseDate.getMonth()]} ${baseDate.getFullYear()}`;
 
-  // Generate 3 consecutive months starting from baseDate
-  let html = '';
-  for (let i = 0; i < 3; i++) {
-    const mDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
-    html += renderSingleMonthHTML(mDate, monthNames);
-  }
-  container.innerHTML = html;
+  // Genera un único mes a partir de baseDate
+  container.innerHTML = renderSingleMonthHTML(baseDate, monthNames);
 }
 
 function renderSingleMonthHTML(dateObj, monthNames) {
@@ -325,8 +229,8 @@ function renderSingleMonthHTML(dateObj, monthNames) {
               ${m.equipo_local_nombre.slice(0, 5)} vs ${m.equipo_visitante_nombre.slice(0, 5)}
             </div>
             <div class="cal-pill-actions">
-              <button class="cal-pill-btn cal-pill-edit" onclick="event.stopPropagation(); openEditMatchModalCalendario(${m.id})" title="Editar">✏️</button>
-              <button class="cal-pill-btn cal-pill-delete" onclick="event.stopPropagation(); deleteMatchCalendario(${m.id})" title="Eliminar">🗑️</button>
+              <button class="cal-pill-btn cal-pill-edit" onclick="event.stopPropagation(); openMatchEditPanel(${m.id})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button class="cal-pill-btn cal-pill-delete" onclick="event.stopPropagation(); deleteMatchCalendario(${m.id})" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button>
             </div>
           </div>
         `;
@@ -334,7 +238,7 @@ function renderSingleMonthHTML(dateObj, monthNames) {
     }
 
     daysHTML += `
-      <div class="cal-day ${isToday ? 'cal-today' : ''} ${dayMatches.length > 0 ? 'has-matches' : ''}" onclick="openAddMatchModalForDay('${dateStr}')">
+      <div class="cal-day ${isToday ? 'cal-today' : ''} ${dayMatches.length > 0 ? 'has-matches' : ''} ${calendarioState.selectedDay === dateStr ? 'cal-selected' : ''}" data-date="${dateStr}" onclick="openMatchPanel('${dateStr}')">
         <span class="day-number">${day}</span>
         <div class="day-matches-wrapper">${matchBadgeHTML}</div>
       </div>
@@ -343,7 +247,6 @@ function renderSingleMonthHTML(dateObj, monthNames) {
 
   return `
     <div class="month-card card">
-      <h4>${monthNames[month]} ${year}</h4>
       <div class="cal-weekdays">
         <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
       </div>
@@ -352,83 +255,139 @@ function renderSingleMonthHTML(dateObj, monthNames) {
   `;
 }
 
-function openAddMatchModalForDay(dateStr) {
-  openAddMatchModal();
-  if (dateStr) {
-    document.getElementById('mFechaHora').value = `${dateStr}T20:00`;
+/* ── Panel visual de programación rápida (inline) ────────────── */
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function formatDateLabel(dateStr) {
+  if (!dateStr) return '(—)';
+  const parts = dateStr.split('-');
+  return `(${parts[2]}-${parts[1]}-${parts[0]})`;
+}
+
+function openMatchPanel(dateStr, match) {
+  const wrapper = document.getElementById('matchQuickPanelWrapper');
+  if (!wrapper) return;
+
+  const isEdit = !!match;
+
+  // Clic en el día ya seleccionado (sin edición) → cierra el panel
+  if (!isEdit && dateStr && calendarioState.selectedDay === dateStr && wrapper.classList.contains('open')) {
+    closeMatchPanel();
+    return;
+  }
+
+  // Reset del formulario y del borrador de equipos
+  document.getElementById('matchQuickForm').reset();
+  document.getElementById('quickMatchError').classList.add('hidden');
+  document.getElementById('qMatchId').value = '';
+  quickMatchDraft.local = { nombre: '', foto: '' };
+  quickMatchDraft.visitante = { nombre: '', foto: '' };
+
+  calendarioState.selectedDay = dateStr || null;
+
+  if (isEdit) {
+    // ── Modo edición: rellena con los datos del partido
+    document.getElementById('qMatchId').value = match.id;
+    document.getElementById('qPanelTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Partido';
+    document.getElementById('qSaveBtn').textContent = 'Guardar Cambios';
+    document.getElementById('qCompeticion').value = match.competicion;
+    document.getElementById('qJornada').value = match.jornada;
+    quickMatchDraft.local = { nombre: match.equipo_local_nombre, foto: match.equipo_local_foto || '' };
+    quickMatchDraft.visitante = { nombre: match.equipo_visitante_nombre, foto: match.equipo_visitante_foto || '' };
+    if (match.fecha_hora) {
+      document.getElementById('qFecha').value = match.fecha_hora.slice(0, 10);
+      document.getElementById('qHora').value = match.fecha_hora.slice(11, 16);
+    }
+    document.getElementById('qLugar').value = match.lugar || '';
+  } else {
+    // ── Modo nuevo: fecha = día pulsado (o mañana), hora por defecto = hora actual
+    document.getElementById('qPanelTitle').innerHTML = '<i class="fa-solid fa-calendar-days"></i> Programar Partido';
+    document.getElementById('qSaveBtn').textContent = 'Guardar Partido';
+    const now = new Date();
+    let d = new Date();
+    if (dateStr) {
+      const p = dateStr.split('-');
+      d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    } else {
+      d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    }
+    document.getElementById('qFecha').value =
+      `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    document.getElementById('qHora').value = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  }
+
+  updateQuickTeamButtons();
+  updateSelectedDayHighlight();
+  updatePanelDateLabel();
+
+  wrapper.classList.add('open');
+  wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function openMatchEditPanel(matchId) {
+  try {
+    const res = await fetch(`/api/partidos/${matchId}`);
+    if (!res.ok) throw new Error('No se pudo cargar el partido');
+    const m = await res.json();
+    openMatchPanel(m.fecha_hora ? m.fecha_hora.slice(0, 10) : null, m);
+  } catch (err) {
+    alert(err.message);
   }
 }
 
-function openAddMatchModal() {
-  const modal = document.getElementById('matchModal');
-  document.getElementById('matchForm').reset();
-  document.getElementById('matchFormError').classList.add('hidden');
-  
-  // Default datetime to current date + 1 day at 20:00
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  const dateISO = d.toISOString().slice(0, 10);
-  document.getElementById('mFechaHora').value = `${dateISO}T20:00`;
-
-  modal.classList.remove('hidden');
+function closeMatchPanel() {
+  const wrapper = document.getElementById('matchQuickPanelWrapper');
+  if (wrapper) wrapper.classList.remove('open');
+  calendarioState.selectedDay = null;
+  updateSelectedDayHighlight();
 }
 
-function closeMatchModal() {
-  document.getElementById('matchModal').classList.add('hidden');
-}
-
-function toggleElectricCheckbox(teamType) {
-  if (teamType === 'local') {
-    const isElectric = document.getElementById('mLocalElectric').checked;
-    const inputName = document.getElementById('mLocalNombre');
-    const inputFoto = document.getElementById('mLocalFoto');
-
-    if (isElectric) {
-      inputName.value = 'Eléctricos FC';
-      inputFoto.value = '/images/electricos.png';
-      inputName.readOnly = true;
-
-      // Desmarcar visitante si estaba marcado
-      const visChk = document.getElementById('mVisitanteElectric');
-      if (visChk && visChk.checked) {
-        visChk.checked = false;
-        const visName = document.getElementById('mVisitanteNombre');
-        const visFoto = document.getElementById('mVisitanteFoto');
-        visName.readOnly = false;
-        if (visName.value === 'Eléctricos FC') visName.value = '';
-        if (visFoto.value === '/images/electricos.png') visFoto.value = '';
-      }
-    } else {
-      inputName.readOnly = false;
-      inputName.value = '';
-      inputFoto.value = '';
-    }
-  } else if (teamType === 'visitante') {
-    const isElectric = document.getElementById('mVisitanteElectric').checked;
-    const inputName = document.getElementById('mVisitanteNombre');
-    const inputFoto = document.getElementById('mVisitanteFoto');
-
-    if (isElectric) {
-      inputName.value = 'Eléctricos FC';
-      inputFoto.value = '/images/electricos.png';
-      inputName.readOnly = true;
-
-      // Desmarcar local si estaba marcado
-      const locChk = document.getElementById('mLocalElectric');
-      if (locChk && locChk.checked) {
-        locChk.checked = false;
-        const locName = document.getElementById('mLocalNombre');
-        const locFoto = document.getElementById('mLocalFoto');
-        locName.readOnly = false;
-        if (locName.value === 'Eléctricos FC') locName.value = '';
-        if (locFoto.value === '/images/electricos.png') locFoto.value = '';
-      }
-    } else {
-      inputName.readOnly = false;
-      inputName.value = '';
-      inputFoto.value = '';
-    }
+function updateSelectedDayHighlight() {
+  document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('cal-selected'));
+  if (calendarioState.selectedDay) {
+    const el = document.querySelector(`.cal-day[data-date="${calendarioState.selectedDay}"]`);
+    if (el) el.classList.add('cal-selected');
   }
+}
+
+function updatePanelDateLabel() {
+  const fechaInput = document.getElementById('qFecha');
+  const label = document.getElementById('qPanelDateLabel');
+  const dateStr = calendarioState.selectedDay || (fechaInput ? fechaInput.value : '');
+  if (label) label.textContent = formatDateLabel(dateStr);
+
+  const pill = document.getElementById('qDayMatchesPill');
+  const hasMatches = calendarioState.selectedDay &&
+    calendarioState.matches.some(m => m.fecha_hora.startsWith(calendarioState.selectedDay));
+  if (pill) {
+    if (hasMatches) pill.classList.remove('hidden');
+    else pill.classList.add('hidden');
+  }
+}
+
+function updateQuickTeamButtons() {
+  const local = quickMatchDraft.local;
+  const visitante = quickMatchDraft.visitante;
+
+  const localImg = document.getElementById('qLocalImg');
+  const visitanteImg = document.getElementById('qVisitanteImg');
+  const localName = document.getElementById('qLocalName');
+  const visitanteName = document.getElementById('qVisitanteName');
+
+  if (localImg) localImg.src = local.foto || '/images/default-team.webp';
+  if (visitanteImg) visitanteImg.src = visitante.foto || '/images/default-team.webp';
+  if (localName) localName.textContent = local.nombre || 'Elige equipo';
+  if (visitanteName) visitanteName.textContent = visitante.nombre || 'Elige equipo';
+}
+
+function swapQuickTeams() {
+  const tmp = quickMatchDraft.local;
+  quickMatchDraft.local = quickMatchDraft.visitante;
+  quickMatchDraft.visitante = tmp;
+  updateQuickTeamButtons();
 }
 
 async function uploadImageFile(fileInput) {
@@ -444,48 +403,53 @@ async function uploadImageFile(fileInput) {
   return data.url;
 }
 
-async function saveMatch(event) {
+async function saveQuickMatch(event) {
   event.preventDefault();
-  const competicion = document.getElementById('mCompeticion').value;
-  const jornada = document.getElementById('mJornada').value;
-  const equipo_local_nombre = document.getElementById('mLocalNombre').value.trim();
-  const equipo_local_es_electricos = document.getElementById('mLocalElectric').checked;
-  let equipo_local_foto = document.getElementById('mLocalFoto').value.trim();
-  const equipo_visitante_nombre = document.getElementById('mVisitanteNombre').value.trim();
-  const equipo_visitante_es_electricos = document.getElementById('mVisitanteElectric').checked;
-  let equipo_visitante_foto = document.getElementById('mVisitanteFoto').value.trim();
-  const fecha_hora = document.getElementById('mFechaHora').value;
-  const lugar = document.getElementById('mLugar').value.trim();
-  const errDiv = document.getElementById('matchFormError');
+
+  const matchId = document.getElementById('qMatchId').value;
+  const competicion = document.getElementById('qCompeticion').value;
+  const jornada = document.getElementById('qJornada').value;
+  const equipo_local_nombre = quickMatchDraft.local.nombre;
+  const equipo_local_foto = quickMatchDraft.local.foto;
+  const equipo_visitante_nombre = quickMatchDraft.visitante.nombre;
+  const equipo_visitante_foto = quickMatchDraft.visitante.foto;
+  const fecha = document.getElementById('qFecha').value;
+  let hora = document.getElementById('qHora').value;
+  const lugar = document.getElementById('qLugar').value.trim();
+  const errDiv = document.getElementById('quickMatchError');
 
   errDiv.classList.add('hidden');
 
+  if (!equipo_local_nombre || !equipo_visitante_nombre) {
+    errDiv.textContent = 'Selecciona el equipo local y el visitante';
+    errDiv.classList.remove('hidden');
+    return;
+  }
+
+  if (!fecha) {
+    errDiv.textContent = 'Indica la fecha del partido';
+    errDiv.classList.remove('hidden');
+    return;
+  }
+
+  if (!hora) {
+    const n = new Date();
+    hora = `${pad2(n.getHours())}:${pad2(n.getMinutes())}`;
+  }
+  const fecha_hora = `${fecha}T${hora}`;
+
   try {
-    // Check for uploaded file images
-    const localFile = document.getElementById('mLocalFotoFile');
-    const visitanteFile = document.getElementById('mVisitanteFotoFile');
-
-    if (localFile && localFile.files[0]) {
-      const uploadedUrl = await uploadImageFile(localFile);
-      if (uploadedUrl) equipo_local_foto = uploadedUrl;
-    }
-
-    if (visitanteFile && visitanteFile.files[0]) {
-      const uploadedUrl = await uploadImageFile(visitanteFile);
-      if (uploadedUrl) equipo_visitante_foto = uploadedUrl;
-    }
-
-    const res = await fetch('/api/partidos', {
-      method: 'POST',
+    const res = await fetch(matchId ? `/api/partidos/${matchId}` : '/api/partidos', {
+      method: matchId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         competicion,
         jornada,
         equipo_local_nombre,
-        equipo_local_es_electricos,
+        equipo_local_es_electricos: equipo_local_nombre === 'Eléctricos FC',
         equipo_local_foto,
         equipo_visitante_nombre,
-        equipo_visitante_es_electricos,
+        equipo_visitante_es_electricos: equipo_visitante_nombre === 'Eléctricos FC',
         equipo_visitante_foto,
         fecha_hora,
         lugar
@@ -495,7 +459,7 @@ async function saveMatch(event) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al guardar el partido');
 
-    closeMatchModal();
+    closeMatchPanel();
     await fetchCalendarMatches();
   } catch (err) {
     errDiv.textContent = err.message;
@@ -503,86 +467,7 @@ async function saveMatch(event) {
   }
 }
 
-/* ── Calendar inline edit / delete ─────────────────────────── */
-
-async function openEditMatchModalCalendario(matchId) {
-  try {
-    const res = await fetch(`/api/partidos/${matchId}`);
-    if (!res.ok) throw new Error('No se pudo cargar el partido');
-    const m = await res.json();
-
-    document.getElementById('editCalMatchId').value = m.id;
-    document.getElementById('editCalCompeticion').value = m.competicion;
-    document.getElementById('editCalJornada').value = m.jornada;
-    document.getElementById('editCalLocalNombre').value = m.equipo_local_nombre;
-    document.getElementById('editCalLocalFoto').value = m.equipo_local_foto || '';
-    document.getElementById('editCalVisitanteNombre').value = m.equipo_visitante_nombre;
-    document.getElementById('editCalVisitanteFoto').value = m.equipo_visitante_foto || '';
-    document.getElementById('editCalFechaHora').value = m.fecha_hora ? m.fecha_hora.slice(0, 16) : '';
-    document.getElementById('editCalLugar').value = m.lugar;
-    document.getElementById('editCalMatchError').classList.add('hidden');
-    document.getElementById('editCalLocalFotoFile').value = '';
-    document.getElementById('editCalVisitanteFotoFile').value = '';
-
-    document.getElementById('editMatchCalendarModal').classList.remove('hidden');
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-function closeEditMatchCalendarModal() {
-  document.getElementById('editMatchCalendarModal').classList.add('hidden');
-}
-
-async function saveEditMatchCalendario(event) {
-  event.preventDefault();
-  const matchId = document.getElementById('editCalMatchId').value;
-  const competicion = document.getElementById('editCalCompeticion').value;
-  const jornada = document.getElementById('editCalJornada').value;
-  const equipo_local_nombre = document.getElementById('editCalLocalNombre').value.trim();
-  let equipo_local_foto = document.getElementById('editCalLocalFoto').value.trim();
-  const equipo_visitante_nombre = document.getElementById('editCalVisitanteNombre').value.trim();
-  let equipo_visitante_foto = document.getElementById('editCalVisitanteFoto').value.trim();
-  const fecha_hora = document.getElementById('editCalFechaHora').value;
-  const lugar = document.getElementById('editCalLugar').value.trim();
-  const errDiv = document.getElementById('editCalMatchError');
-
-  errDiv.classList.add('hidden');
-
-  try {
-    const localFile = document.getElementById('editCalLocalFotoFile');
-    if (localFile && localFile.files[0]) {
-      const url = await uploadImageFile(localFile);
-      if (url) equipo_local_foto = url;
-    }
-
-    const visitanteFile = document.getElementById('editCalVisitanteFotoFile');
-    if (visitanteFile && visitanteFile.files[0]) {
-      const url = await uploadImageFile(visitanteFile);
-      if (url) equipo_visitante_foto = url;
-    }
-
-    const res = await fetch(`/api/partidos/${matchId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        competicion, jornada,
-        equipo_local_nombre, equipo_local_foto,
-        equipo_visitante_nombre, equipo_visitante_foto,
-        fecha_hora, lugar
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al actualizar el partido');
-
-    closeEditMatchCalendarModal();
-    await fetchCalendarMatches();
-  } catch (err) {
-    errDiv.textContent = err.message;
-    errDiv.classList.remove('hidden');
-  }
-}
+/* ── Calendar inline delete ─────────────────────────────────── */
 
 async function deleteMatchCalendario(matchId) {
   if (confirm('¿Eliminar este partido permanentemente? Se borrarán la convocatoria, alineación y eventos registrados.')) {
@@ -625,31 +510,52 @@ async function openSelectEquipoModal(targetField) {
   }
 }
 
-function renderSelectEquipoList(list) {
-  const container = document.getElementById('selectEquipoList');
-  if (!container) return;
+const ELECTRICOS_FIXED_TEAM = { nombre: 'Eléctricos FC', foto: '/images/electricos.png' };
 
-  if (list.length === 0) {
-    container.innerHTML = '<p class="empty-text" style="grid-column: 1/-1;">No se encontraron equipos.</p>';
-    return;
-  }
+function normalizeText(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
-  container.innerHTML = list.map(eq => `
-    <div class="card" onclick="selectEquipoForMatch('${eq.nombre.replace(/'/g, "\\'")}', '${(eq.foto || '').replace(/'/g, "\\'")}')" style="cursor: pointer; text-align: center; padding: 12px; transition: transform 0.15s, border-color 0.15s; border: 1px solid var(--border-light);" onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.transform='scale(1.02)';" onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='scale(1)';">
+function renderEquipoCardHTML(eq) {
+  const safeName = String(eq.nombre || '').replace(/'/g, "\\'");
+  const safeFoto = String(eq.foto || '').replace(/'/g, "\\'");
+  return `
+    <div class="card" onclick="selectEquipoForMatch('${safeName}', '${safeFoto}')" style="cursor: pointer; text-align: center; padding: 12px; transition: transform 0.15s, border-color 0.15s; border: 1px solid var(--border-light);" onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.transform='scale(1.02)';" onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='scale(1)';">
       <img src="${eq.foto || '/images/default-team.webp'}" alt="${eq.nombre}" style="width: 48px; height: 48px; object-fit: contain; margin: 0 auto 8px auto; display: block; background: #f1f5f9; padding: 4px; border-radius: 8px;" onerror="this.src='/images/default-team.webp'">
       <strong style="font-size: 0.85rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${eq.nombre}</strong>
     </div>
-  `).join('');
+  `;
+}
+
+function renderSelectEquipoList(list, query = '') {
+  const container = document.getElementById('selectEquipoList');
+  if (!container) return;
+
+  const normQuery = normalizeText(query);
+
+  // Opción permanente de Eléctricos FC: siempre arriba, solo aparece si la búsqueda la contiene
+  const showElectricos = !normQuery || normalizeText(ELECTRICOS_FIXED_TEAM.nombre).includes(normQuery);
+  const electricosHTML = showElectricos ? renderEquipoCardHTML(ELECTRICOS_FIXED_TEAM) : '';
+
+  // Evita duplicar Eléctricos FC si además existe como equipo guardado en la BD
+  const normElectricos = normalizeText(ELECTRICOS_FIXED_TEAM.nombre);
+  const filtered = list.filter(eq => {
+    if (normalizeText(eq.nombre) === normElectricos) return false;
+    if (!normQuery) return true;
+    return normalizeText(eq.nombre).includes(normQuery);
+  });
+
+  const otrosHTML = filtered.map(eq => renderEquipoCardHTML(eq)).join('');
+  const emptyText = (!showElectricos && filtered.length === 0)
+    ? '<p class="empty-text" style="grid-column: 1/-1;">No se encontraron equipos.</p>'
+    : '';
+
+  container.innerHTML = electricosHTML + otrosHTML + emptyText;
 }
 
 function filterSelectEquipoList() {
-  const query = document.getElementById('selectEquipoSearch').value.trim().toLowerCase();
-  if (!query) {
-    renderSelectEquipoList(allEquiposForSelect);
-    return;
-  }
-  const filtered = allEquiposForSelect.filter(e => e.nombre.toLowerCase().includes(query));
-  renderSelectEquipoList(filtered);
+  const query = document.getElementById('selectEquipoSearch').value.trim();
+  renderSelectEquipoList(allEquiposForSelect, query);
 }
 
 function toggleQuickCreateEquipoForm() {
@@ -699,22 +605,20 @@ function closeSelectEquipoModal() {
 }
 
 function selectEquipoForMatch(nombre, foto) {
-  if (targetSelectEquipoField === 'local') {
-    document.getElementById('mLocalNombre').value = nombre;
-    document.getElementById('mLocalFoto').value = foto;
-    const chk = document.getElementById('mLocalElectric');
-    if (chk) { chk.checked = false; document.getElementById('mLocalNombre').readOnly = false; }
-  } else if (targetSelectEquipoField === 'visitante') {
-    document.getElementById('mVisitanteNombre').value = nombre;
-    document.getElementById('mVisitanteFoto').value = foto;
-    const chk = document.getElementById('mVisitanteElectric');
-    if (chk) { chk.checked = false; document.getElementById('mVisitanteNombre').readOnly = false; }
-  } else if (targetSelectEquipoField === 'editLocal') {
-    document.getElementById('editCalLocalNombre').value = nombre;
-    document.getElementById('editCalLocalFoto').value = foto;
-  } else if (targetSelectEquipoField === 'editVisitante') {
-    document.getElementById('editCalVisitanteNombre').value = nombre;
-    document.getElementById('editCalVisitanteFoto').value = foto;
+  if (targetSelectEquipoField === 'panelLocal') {
+    quickMatchDraft.local = { nombre, foto };
+    // El mismo equipo no puede ser local y visitante a la vez
+    if (quickMatchDraft.visitante.nombre && quickMatchDraft.visitante.nombre === nombre) {
+      quickMatchDraft.visitante = { nombre: '', foto: '' };
+    }
+    updateQuickTeamButtons();
+  } else if (targetSelectEquipoField === 'panelVisitante') {
+    quickMatchDraft.visitante = { nombre, foto };
+    // El mismo equipo no puede ser local y visitante a la vez
+    if (quickMatchDraft.local.nombre && quickMatchDraft.local.nombre === nombre) {
+      quickMatchDraft.local = { nombre: '', foto: '' };
+    }
+    updateQuickTeamButtons();
   }
   closeSelectEquipoModal();
 }

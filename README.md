@@ -128,7 +128,7 @@ Portainer reiniciará el contenedor con el nuevo código manteniendo intactos lo
 
 1. **Landing Page (`/`)**: Top 5 goleadores y asistentes de la temporada + slider deslizable de partidos con badges por competición.
 2. **Plantilla (`/plantilla`)**: CRUD completo de jugadores (nombre, dorsal, posición, foto) con estadísticas acumuladas.
-3. **Calendario (`/calendario`)**: Vista de 3 meses de calendario + modal para añadir/programar partidos.
+3. **Calendario (`/calendario`)**: Vista mensual (1 mes en pantalla con navegación anterior/siguiente) + panel visual desplegable para programar partidos: competición, jornada, equipos local/visitante con VS e intercambio rápido, fecha, hora y lugar.
 4. **Página de Partido**: Formaciones F7 (3-3, 2-3-1, 3-2-1, 2-2-2, 3-1-2), modal de convocatoria y selector de titulares tipo carta FIFA.
 5. **Partido en Directo (`/partido-en-directo`)**: Cronómetro en vivo `MM:SS`, botones gigantes táctiles en móvil para acciones rápidas de Eléctricos y Rival, descansos y cronología en tiempo real.
 6. **Generador de Carteles (`/carteles`)**: Creación de carteles de Alineación, Resultado y Anuncio con plantillas de color y descarga instantánea en PNG.

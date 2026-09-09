@@ -128,15 +128,15 @@ function renderMatchDetailPage() {
       <div class="match-detail-info">
         <div class="info-row">
           <span class="pill pill-${compSlug}">${m.competicion} (Jornada ${m.jornada})</span>
-          <span class="match-date-str">📅 ${m.fecha_formateada}</span>
-          <span class="match-field-str">📍 ${m.lugar}</span>
+          <span class="match-date-str"><i class="fa-solid fa-calendar-days fi"></i> ${m.fecha_formateada}</span>
+          <span class="match-field-str"><i class="fa-solid fa-location-dot fi"></i> ${m.lugar}</span>
         </div>
 
         <div class="header-action-buttons">
-          <button class="btn btn-outline btn-sm" onclick="openEditMatchModal()">✏️ Editar Partido</button>
-          <button class="btn btn-outline-danger btn-sm" onclick="deleteMatchFromDetail(${m.id})">🗑️ Eliminar Partido</button>
-          ${m.estado !== 'programado' ? `<button class="btn btn-outline-danger btn-sm" onclick="resetMatchFromDetail(${m.id})">🔄 Reiniciar Partido</button>` : ''}
-          <a href="${liveUrl}" data-link class="btn btn-primary btn-sm">⚡ ${isFinished ? 'Ver Marcador en Directo' : (m.estado === 'programado' ? 'Empezar Partido' : 'Ir al Partido en Directo')}</a>
+          <button class="btn btn-outline btn-sm" onclick="openEditMatchModal()"><i class="fa-solid fa-pen"></i> Editar Partido</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteMatchFromDetail(${m.id})"><i class="fa-solid fa-trash-can"></i> Eliminar Partido</button>
+          ${m.estado !== 'programado' ? `<button class="btn btn-outline-danger btn-sm" onclick="resetMatchFromDetail(${m.id})"><i class="fa-solid fa-rotate"></i> Reiniciar Partido</button>` : ''}
+          <a href="${liveUrl}" data-link class="btn btn-primary btn-sm"><i class="fa-solid fa-bolt"></i> ${isFinished ? 'Ver Marcador en Directo' : (m.estado === 'programado' ? 'Empezar Partido' : 'Ir al Partido en Directo')}</a>
         </div>
       </div>
     </div>
@@ -161,8 +161,8 @@ function renderMatchDetailPage() {
             </select>
           </div>
 
-          <button class="btn btn-dark btn-sm" onclick="openConvocatoriaModal()">👥 Convocatoria (${matchDetailState.convocatoriaIds.length})</button>
-          <button class="btn btn-primary btn-sm" onclick="saveLineupToServer()">💾 Guardar Alineación</button>
+          <button class="btn btn-dark btn-sm" onclick="openConvocatoriaModal()"><i class="fa-solid fa-users"></i> Convocatoria (${matchDetailState.convocatoriaIds.length})</button>
+          <button class="btn btn-primary btn-sm" onclick="saveLineupToServer()"><i class="fa-solid fa-floppy-disk"></i> Guardar Alineación</button>
         </div>
       </div>
 
@@ -407,7 +407,7 @@ function openFifaSelectorModal(slotId) {
     grid.innerHTML = `
       <div class="fifa-card empty-card" onclick="selectPlayerForSlot(null)">
         <div class="fifa-card-inner">
-          <span class="empty-icon">🚫</span>
+          <span class="empty-icon"><i class="fa-solid fa-ban"></i></span>
           <span>Vaciar Hueco</span>
         </div>
       </div>
@@ -421,8 +421,8 @@ function openFifaSelectorModal(slotId) {
             <div class="fifa-card-inner">
               <span class="fifa-rating">#${p.dorsal}</span>
               <span class="fifa-pos">${p.posicion.slice(0, 3).toUpperCase()}</span>
-              ${isNatural ? '<span class="natural-badge">⭐ Ideal</span>' : ''}
-              ${isAssignedElsewhere ? '<span class="assigned-badge">📍 En campo</span>' : ''}
+              ${isNatural ? '<span class="natural-badge"><i class="fa-solid fa-star fi-gold"></i> Ideal</span>' : ''}
+              ${isAssignedElsewhere ? '<span class="assigned-badge"><i class="fa-solid fa-location-dot"></i> En campo</span>' : ''}
               <img src="${p.foto || '/images/default-icon.webp'}" class="fifa-photo" onerror="this.src='/images/default-icon.webp'">
               <div class="fifa-name">${p.nombre}</div>
             </div>
@@ -475,6 +475,8 @@ async function saveLineupToServer() {
   } catch (err) {
     alert(err.message);
   }
+}
+
 function formatMinuteDisplay(minuto, periodo) {
   if (minuto === undefined || minuto === null || minuto === '') return '';
   const min = parseInt(minuto, 10);
@@ -494,11 +496,11 @@ function formatMinuteDisplay(minuto, periodo) {
 }
 
 function renderEventRowHTML(e) {
-  let icon = '⚽';
+  let icon = '<i class="fa-solid fa-futbol"></i>';
   let text = '';
 
   if (e.tipo === 'gol') {
-    icon = '⚽';
+    icon = '<i class="fa-solid fa-futbol"></i>';
     if (e.es_electricos) {
       text = `Gol de ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
       if (e.asistente_nombre) {
@@ -508,21 +510,21 @@ function renderEventRowHTML(e) {
       text = `Gol de ${matchDetailState.match.equipo_visitante_nombre}`;
     }
   } else if (e.tipo === 'tarjeta_amarilla') {
-    icon = '🟨';
+    icon = '<i class="fa-solid fa-square fi-yellow"></i>';
     if (e.es_electricos) {
       text = `Tarjeta Amarilla para ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
     } else {
       text = `Tarjeta Amarilla para ${matchDetailState.match.equipo_visitante_nombre}`;
     }
   } else if (e.tipo === 'tarjeta_roja') {
-    icon = '🟥';
+    icon = '<i class="fa-solid fa-square fi-red"></i>';
     if (e.es_electricos) {
       text = `Tarjeta Roja para ${e.jugador_nombre ? e.jugador_nombre + ' ' + e.jugador_apellidos : 'Eléctricos FC'}`;
     } else {
       text = `Tarjeta Roja para ${matchDetailState.match.equipo_visitante_nombre}`;
     }
   } else if (e.tipo === 'cambio') {
-    icon = '🔄';
+    icon = '<i class="fa-solid fa-rotate"></i>';
     if (e.es_electricos) {
       text = `Cambio: Entra ${e.jugador_nombre || ''} y sale ${e.sale_nombre || ''}`;
     } else {

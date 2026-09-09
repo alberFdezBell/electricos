@@ -115,19 +115,19 @@ function renderPlantillaList() {
 
       <div class="player-stats-row">
         <div class="stat-box">
-          <span class="stat-value">⚽ ${j.goles}</span>
+          <span class="stat-value"><i class="fa-solid fa-futbol"></i> ${j.goles}</span>
           <span class="stat-label">Goles</span>
         </div>
         <div class="stat-box">
-          <span class="stat-value">👟 ${j.asistencias}</span>
+          <span class="stat-value"><i class="fa-solid fa-shoe-prints"></i> ${j.asistencias}</span>
           <span class="stat-label">Asist.</span>
         </div>
         <div class="stat-box">
-          <span class="stat-value">🟨 ${j.amarillas}</span>
+          <span class="stat-value"><i class="fa-solid fa-square fi-yellow"></i> ${j.amarillas}</span>
           <span class="stat-label">Amarillas</span>
         </div>
         <div class="stat-box">
-          <span class="stat-value">🟥 ${j.rojas}</span>
+          <span class="stat-value"><i class="fa-solid fa-square fi-red"></i> ${j.rojas}</span>
           <span class="stat-label">Rojas</span>
         </div>
       </div>

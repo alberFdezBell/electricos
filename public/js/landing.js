@@ -1,7 +1,7 @@
 // Landing Page View Module
 let landingState = {
   matches: [],
-  filter: 'all', // 'all' or 'finalizado'
+  filter: { jugados: true, noJugados: true }, // checkboxes: 'jugados' y 'noJugados'
   topStats: { goleadores: [], asistentes: [] }
 };
 
@@ -42,9 +42,22 @@ async function loadLandingView() {
     <div class="matches-section">
       <div class="section-header">
         <h3>Partidos del Equipo</h3>
-        <button id="filterPlayedBtn" class="btn btn-outline btn-sm" onclick="toggleMatchFilter()">
-          Ver solo jugados
-        </button>
+        <div class="filter-dropdown">
+          <button id="filterToggleBtn" class="btn btn-outline btn-sm" onclick="toggleFilterMenu(event)">
+            <i class="fa-solid fa-filter"></i> Filtros
+          </button>
+          <div id="filterMenu" class="filter-menu hidden">
+            <div class="filter-menu-title">Mostrar partidos:</div>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="filterJugados" checked onchange="onMatchFilterChange()">
+              <span>Jugados</span>
+            </label>
+            <label class="filter-checkbox">
+              <input type="checkbox" id="filterNoJugados" checked onchange="onMatchFilterChange()">
+              <span>No jugados</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <div id="matchesSlider" class="matches-slider">
@@ -121,7 +134,23 @@ async function fetchLandingClasificacion() {
 
 async function fetchLandingMatches() {
   try {
-    const url = landingState.filter === 'finalizado' ? '/api/partidos?filter=finalizado' : '/api/partidos';
+    const f = landingState.filter;
+
+    // Ningún filtro seleccionado → vacío
+    if (!f.jugados && !f.noJugados) {
+      landingState.matches = [];
+      renderMatchesSlider();
+      return;
+    }
+
+    // Ambos → todos los partidos; uno solo → API con filtro
+    let url = '/api/partidos';
+    if (f.jugados && !f.noJugados) {
+      url = '/api/partidos?filter=finalizado';
+    } else if (!f.jugados && f.noJugados) {
+      url = '/api/partidos?filter=programado';
+    }
+
     const res = await fetch(url);
     if (!res.ok) throw new Error('Error al cargar partidos');
     landingState.matches = await res.json();
@@ -129,6 +158,34 @@ async function fetchLandingMatches() {
   } catch (err) {
     document.getElementById('matchesSlider').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
   }
+}
+
+/* ── Menú de filtros (checkbox: Jugados / No jugados) ───────── */
+let filterOutsideHandlerRegistered = false;
+
+function toggleFilterMenu(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById('filterMenu');
+  if (!menu) return;
+  const opening = menu.classList.contains('hidden');
+  menu.classList.toggle('hidden');
+  if (opening) registerFilterOutsideClose();
+}
+
+function registerFilterOutsideClose() {
+  if (filterOutsideHandlerRegistered) return;
+  filterOutsideHandlerRegistered = true;
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('filterMenu');
+    if (!menu || menu.classList.contains('hidden')) return;
+    if (!e.target.closest('.filter-dropdown')) menu.classList.add('hidden');
+  });
+}
+
+async function onMatchFilterChange() {
+  landingState.filter.jugados = document.getElementById('filterJugados').checked;
+  landingState.filter.noJugados = document.getElementById('filterNoJugados').checked;
+  await fetchLandingMatches();
 }
 
 async function fetchLandingTopStats() {
@@ -204,17 +261,10 @@ function renderMatchesSlider() {
           <div class="match-date">${m.fecha_formateada}</div>
           <div class="match-footer-row">
             <span class="pill pill-${compSlug}">${m.competicion} (J${m.jornada})</span>
-            <span class="match-field">📍 ${m.lugar}</span>
+            <span class="match-field"><i class="fa-solid fa-location-dot fi"></i> ${m.lugar}</span>
           </div>
         </div>
       </div>
     `;
   }).join('');
-}
-
-async function toggleMatchFilter() {
-  landingState.filter = landingState.filter === 'all' ? 'finalizado' : 'all';
-  const btn = document.getElementById('filterPlayedBtn');
-  btn.textContent = landingState.filter === 'finalizado' ? 'Ver todos los partidos' : 'Ver solo jugados';
-  await fetchLandingMatches();
 }
